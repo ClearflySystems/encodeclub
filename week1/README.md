@@ -9,4 +9,4 @@ Execute any tests
 `yarn hardhat test`
 
 Execute scripts
-`yarn hardhat run scripts/srciptname.ts`
+`yarn hardhat run scripts/scriptname.ts`
