@@ -20,7 +20,7 @@ async function main() {
     console.log(`Voting Power to pass is ${votingPower}`);
 
     // Get Provider
-    const provider = helpers.getTestnetProvider();
+    const provider = helpers.getTestnetProvider(1);
 
     // Check Private Key and connect Signer Wallet
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');

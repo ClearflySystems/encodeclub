@@ -15,7 +15,7 @@ async function main() {
     const voterAddress = helpers.getRequiredArg(1, "Missing Voter address parameter");
 
     // Get Provider
-    const provider = helpers.getTestnetProvider();
+    const provider = helpers.getTestnetProvider(1);
 
     // Check Private Key and connect Signer Wallet
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');

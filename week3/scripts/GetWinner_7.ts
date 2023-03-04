@@ -14,7 +14,7 @@ async function main() {
     const ballotContractAddress = helpers.getRequiredArg(0, "Missing Ballot contract address parameter");
 
     // Setup Provider
-    const provider = helpers.getTestnetProvider();
+    const provider = helpers.getTestnetProvider(1);
 
     // Check Private Key and connect Signer Wallet
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');
