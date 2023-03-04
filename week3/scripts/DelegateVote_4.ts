@@ -1,10 +1,11 @@
 import * as helpers from "./helpers";
 import * as dotenv from 'dotenv';
-import {Ballot__factory} from "../typechain-types";
+import { MyToken__factory } from "../typechain-types";
+import { utils } from "ethers";
 dotenv.config();
 
 /**
- * yarn run ts-node --files ./scripts/DelegateVote_4.ts "ballotContractAddress" "delegatedVoterAddress"
+ * yarn run ts-node --files ./scripts/DelegateVote_4.ts "tokenContractAddress" "delegatedVoterAddress" 
  */
 async function main() {
 
@@ -13,6 +14,7 @@ async function main() {
 
     // Check Delegated voter address passed
     const delegatedVoterAddress = helpers.getRequiredArg(1, "Missing Delegated voter address parameter");
+    if (!utils.isAddress(delegatedVoterAddress)) throw new Error("Not a valid EVM address")
     console.log(`delegatedVoterAddress is ${delegatedVoterAddress}`);
 
     // Get Provider
@@ -22,16 +24,15 @@ async function main() {
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');
     const signer = helpers.getConnectedSignerWallet(privateKey, provider);
 
-    // Delegate My Vote to Voter - TODO update as delegate was removed from Ballot, so not sure what they intend should happen
-    const ballotContractFactory = new Ballot__factory(signer);
-    const ballotContract = ballotContractFactory.attach(ballotContractAddress);
-    //const txReceipt =  await ballotContract.delegate(delegatedVoterAddress,{
-    //    gasLimit: 100000
-    //});
-    //console.log(`vote receipt ${txReceipt.hash}`)
+    // Delegate My Vote to Voter
+    const contract = new MyToken__factory(signer).attach(ballotContractAddress)
+    const tx = await contract.delegate(delegatedVoterAddress, {gasLimit: 100000})
+    const receipt = await tx.wait()
 
+    if (receipt.status === 0) throw new Error(`Transaction failed: ${tx.hash}`)
+    
+    console.log(`Delegated vote to ${delegatedVoterAddress} from ${signer.address} at block ${receipt.blockNumber}`)
 }
-
 
 main().catch((error) => {
     console.error(error);
