@@ -16,7 +16,7 @@ async function main() {
     console.log(`delegatedVoterAddress is ${delegatedVoterAddress}`);
 
     // Get Provider
-    const provider = helpers.getTestnetProvider();
+    const provider = helpers.getTestnetProvider(1);
 
     // Check Private Key and connect Signer Wallet
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');

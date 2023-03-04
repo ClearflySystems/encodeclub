@@ -17,7 +17,7 @@ async function main() {
     const targetBlockNumber = helpers.getRequiredArg(1, "Missing Target Block parameter");
 
     // Get Provider
-    const provider = helpers.getTestnetProvider();
+    const provider = helpers.getTestnetProvider(1);
 
     // Check Private Key and connect Signer Wallet
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');
