@@ -5,7 +5,7 @@ import * as helpers from "./helpers";
 dotenv.config();
 
 /**
- * yarn run ts-node --files ./scripts/GetWinner_6.ts "ballotContractAddress"
+ * yarn run ts-node --files ./scripts/GetWinner_7.ts "ballotContractAddress"
  * param 1 being the contract address
  */
 async function main() {
@@ -14,7 +14,7 @@ async function main() {
     const ballotContractAddress = helpers.getRequiredArg(0, "Missing Ballot contract address parameter");
 
     // Setup Provider
-    const provider = helpers.getTestnetProvider();
+    const provider = helpers.getTestnetProvider(1);
 
     // Check Private Key and connect Signer Wallet
     const privateKey = helpers.getRequiredEnvVar('PRIVATE_KEY');
