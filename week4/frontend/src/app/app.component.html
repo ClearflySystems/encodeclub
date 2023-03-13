@@ -1,0 +1,82 @@
+<div class="px-4 py-5 my-5 text-center">
+  <h1 class="display-5 fw-bold">Frontend App Demo</h1>
+  <div class="col-lg-6 mx-auto">
+    <p *ngIf="blockNumber" class="lead mb-4">
+      We are connected to the Goerli blockchain at the block
+      <strong>{{ blockNumber }}</strong>
+    </p>
+
+    <button type="button" class="btn btn-secondary btn-lg px-4 gap-3 my-4" (click)="createWallet()" >
+      {{userWallet ? "Create another":"Create"}} Wallet
+    </button>
+
+    <div class="card mt-4 mx-auto" *ngIf="userWallet">
+      <div class="card-body">
+        <h5 class="card-title">User Wallet</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{userWallet.address}}</h6>
+        <p class="card-text">Balance : {{userEthBalance}} ETH</p>
+        <p class="card-text">Balance : {{userTokenBalance}} MTK</p>
+
+        <button   type="button" class="btn btn-danger btn-lg px-4 gap-3 my-4" (click)="requestTokens(mintAmount.value)" >
+          Request Tokens
+        </button>
+        <p>Amount:</p>
+        <input #mintAmount type="number" min="0" max="10" class="input"/>
+        <br />
+        <button type="button" class="btn btn-danger btn-lg px-4 gap-3 my-4" (click)="delegate(delegatee.value)" >
+          Delegate
+        </button>
+        <br />
+        <p>To:</p>
+        <input #delegatee type="string" class="input"/>
+      </div>
+    </div>
+
+
+    <div class="card mt-4 mx-auto" *ngIf="tokenContractAddress">
+      <div class="card-body">
+        <h5 class="card-title">Token Contract</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{tokenContractAddress}}</h6>
+        <p class="card-text">Total Supply : {{ tokenTotalSupply }} MTK</p>
+      </div>
+    </div>
+
+    <div class="card mt-4 mx-auto" *ngIf="ballotContractAddress">
+      <div class="card-body">
+        <h5 class="card-title">Ballot Contract</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{ballotContractAddress}}</h6>
+        <button  type="button" class="btn btn-danger btn-lg px-4 gap-3 my-4" (click)="vote(proposalIndex.value, voteWeight.value)" >
+          Vote on proposals
+        </button>
+        <p>Proposal index:</p>
+        <input #proposalIndex type="number" min="0" class="input"/>
+        <p>Weight:</p>
+        <input #voteWeight type="number" min="0" class="input"/>
+        <h5 class="card-title">Winning proposal</h5>
+        <h6 class="card-subtitle mb-2 text-muted">{{winningProposal}}</h6>
+      </div>
+    </div>
+
+    <div *ngIf="transactions.length > 0">
+      <p>Block Transactions:</p>
+      <ul>
+        <li *ngFor="let transaction of transactions; let i = index">
+          Transaction #{{ i }} : {{ transaction }}
+        </li>
+      </ul>
+    </div>
+
+    <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+      <button type="button" class="btn btn-primary btn-lg px-4 gap-3" (click)="syncBlock()">
+        Sync
+      </button>
+      <button type="button" class="btn btn-outline-secondary btn-lg px-4" (click)="clearBlock()">
+        Clear
+      </button>
+      <button type="button" class="btn btn-outline-danger btn-lg px-4" (click)="getWinningProposal()">
+        Get Winner
+      </button>
+    </div>
+
+  </div>
+</div>
