@@ -1,14 +1,16 @@
 import { HttpClient } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectorRef } from '@angular/core';
 import { BigNumber, Contract, ethers, providers, utils, Wallet } from 'ethers';
 import tokenJson from '../assets/MyToken.json';
 import ballotJson from '../assets/BallotContract.json';
+import detectEthereumProvider from '@metamask/detect-provider';
+import { MetaMaskInpageProvider, BaseProvider } from '@metamask/providers';
 
 const API_URL = "http://localhost:3000"
 
 declare global {
   interface Window {
-    ethereum: import('ethers').providers.ExternalProvider;
+    ethereum: MetaMaskInpageProvider
   }
 }
 
@@ -21,9 +23,10 @@ export class AppComponent {
   blockNumber: number = 0;
   ballotContractAddress: string | undefined;
   ballotContract: Contract | undefined;
-  provider: ethers.providers.BaseProvider;
+  provider: MetaMaskInpageProvider | null | undefined;
   transactions: string[];
-  userWallet: Wallet | undefined;
+  userWallet: providers.JsonRpcSigner | Wallet;
+  userWalletAddress: string = '';
   userEthBalance: number | string | undefined;
   userTokenBalance: number | string | undefined;
   tokenContractAddress: string | undefined;
@@ -31,8 +34,11 @@ export class AppComponent {
   tokenTotalSupply: number | string | undefined;
   winningProposal: string | undefined;
 
-  constructor(private http: HttpClient) {
-    this.provider = new ethers.providers.AlchemyProvider('goerli', 'VY1fwTOfnvp2z1-ah4b5AmGz2x25xStj');
+  constructor(private http: HttpClient, private cdr: ChangeDetectorRef) {
+    this.initMetaMaskProvider().catch( e => {
+      console.log('Error initialising MetaMask Wallet Connection');
+    });
+    this.userWallet = ethers.Wallet.createRandom();
     this.transactions = [];
   }
 
@@ -45,26 +51,28 @@ export class AppComponent {
   }
 
   getTokenBalance() {
-    return this.http.get<{balance:string}>(`${API_URL}/balance/${this.userWallet?.address}`)
+    return this.http.get<{balance:string}>(`${API_URL}/balance/${this.userWalletAddress}`)
   }
 
   syncBlock() {
-    this.provider.getBlock('latest').then( block => {
-      this.blockNumber = block.number;
-      //this.transactions = block.transactions;
-    });
-    this.getTokenAddress().subscribe((response)=>{
-      this.tokenContractAddress = response.address;
-      this.updateTokenInfo();
-    });
-    this.getBallotContract().subscribe((response) => {
-      this.ballotContractAddress = response.address;
-      this.ballotContract = new Contract(
-        this.ballotContractAddress,
-        ballotJson.abi,
-        this.userWallet || this.provider
-      )
-    })
+    if(this.provider && this.userWallet) {
+      //this.provider.getBlock('latest').then(block => {
+      //  this.blockNumber = block.number;
+      //  //this.transactions = block.transactions;
+      //});
+      this.getTokenAddress().subscribe((response) => {
+        this.tokenContractAddress = response.address;
+        this.updateTokenInfo();
+      });
+      this.getBallotContract().subscribe((response) => {
+        this.ballotContractAddress = response.address;
+        this.ballotContract = new Contract(
+          this.ballotContractAddress,
+          ballotJson.abi,
+          this.userWallet
+        )
+      })
+    }
     if (this.userWallet) {
       this.getTokenBalance().subscribe((response) => {
         this.userTokenBalance = parseFloat(String(response));
@@ -77,7 +85,7 @@ export class AppComponent {
     this.tokenContract = new Contract(
       this.tokenContractAddress,
       tokenJson.abi,
-      this.userWallet ?? this.provider
+      this.userWallet
     );
     this.tokenTotalSupply = "loading..."
     this.tokenContract['totalSupply']().then((totalSupplyBN: BigNumber) =>{
@@ -95,7 +103,7 @@ export class AppComponent {
     this.userTokenBalance = "minting..."
     const signature = await this.userWallet?.signMessage(amount);
     const body = {
-      address: this.userWallet?.address,
+      address: this.userWalletAddress,
       amount: amount,
       signature: signature
     };
@@ -112,9 +120,9 @@ export class AppComponent {
     this.tokenContract = new Contract(
       this.tokenContractAddress,
       tokenJson.abi,
-      this.userWallet ?? this.provider
+      this.userWallet
     );
-    this.tokenContract['balanceOf'](this.userWallet?.address).then((balance:any) =>{
+    this.tokenContract['balanceOf'](this.userWalletAddress).then((balance:any) =>{
       console.log('token balance is '+ balance)
       this.userTokenBalance = balance;
     });
@@ -165,11 +173,45 @@ export class AppComponent {
     }
   }
 
-  createWallet() {
-    this.userWallet = Wallet.createRandom().connect(this.provider);
-    this.userWallet.getBalance().then((balanceBN) =>{
-      const balanceStr = utils.formatEther(balanceBN);
-      this.userEthBalance = parseFloat(balanceStr)
-    });
+  async createWallet() {
+
+    //this.userWallet = this.provider.getSigner();
+    //this.userWallet.getBalance().then(async (balanceBN) =>{
+    //  const balanceStr = utils.formatEther(balanceBN);
+    //  this.userEthBalance = parseFloat(balanceStr);
+    //});
+    console.log('Created Wallet');
+  }
+
+  async initMetaMaskProvider() {
+    this.provider = await detectEthereumProvider();
+    if(this.provider){
+      this.provider.request({method: "eth_requestAccounts"}).then( accounts => {
+        this.initLocalWallet(accounts);
+      });
+      this.provider.on('accountsChanged', (accounts:any) => {
+        this.initLocalWallet(accounts);
+      });
+      //const provider = new ethers.providers.JsonRpcProvider();
+      //this.userWallet = provider.getSigner(this.userWalletAddress);
+    }
+  }
+
+  initLocalWallet(accounts: any) {
+    console.log('Init Wallet Connect Callback');
+    if(this.provider && accounts.length) {
+      this.userWalletAddress = accounts[0]; //await this.userWallet.getAddress();
+      console.log(`Address updated: ${this.userWalletAddress}`);
+      this.provider.request({
+        method: "eth_getBalance",
+        params: [this.userWalletAddress, 'latest']
+      }).then(async (balanceBN: any) => {
+        const balanceStr = utils.formatEther(balanceBN);
+        console.log(`Wallet Balance: ${balanceStr}`);
+        this.userEthBalance = parseFloat(balanceStr.toString());
+        // refresh wallet address/balance view
+        this.cdr.detectChanges();
+      });
+    }
   }
 }
