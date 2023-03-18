@@ -1,6 +1,6 @@
 import detectEthereumProvider from '@metamask/detect-provider';
 import { MetaMaskInpageProvider } from '@metamask/providers';
-import {utils, providers} from "ethers";
+import { utils, providers } from "ethers";
 
 declare global {
   interface Window {
@@ -12,12 +12,13 @@ interface IchainIds {
   [index: number]: string;
 }
 const chainIds: IchainIds = {
+  0: 'No Network',
   1: 'Ethereum Main Network',
   3: 'Ropsten Test Network',
   4: 'Rinkeby Test Network',
   5: 'Goerli Test Network',
   42: 'Kovan Test Network',
-  11155111: 'Sepola Test Network',
+  11155111: 'Sepolia Test Network',
 }
 
 /// @title A simple MetaMask Connector
@@ -26,7 +27,7 @@ export class metaMaskModule {
   provider: MetaMaskInpageProvider | null | undefined;
   web3provider: providers.Web3Provider;
   userWalletAddress: string = '';
-  userWalletNetwork: string = '';
+  userWalletNetwork: number = 0;
   userEthBalance: number = 0;
   onUpdateCallback: Function;
 
@@ -49,12 +50,19 @@ export class metaMaskModule {
     this.provider = await detectEthereumProvider();
     if(this.provider) {
       // Set Account switch callback
-      this.web3provider.on('accountsChanged', (accounts: any) => {
+      this.provider.on('accountsChanged', (accounts: any) => {
+        console.log(`Metamask account switched: ${accounts}`);
         this.initLocalWallet(accounts);
       });
       // Set Network/Chain switch callback
-      this.web3provider.on('chainChanged', (chainId: any) => {
+      this.provider.on('chainChanged', (chainId: any) => {
+        console.log(`Metamask chain switched: ${chainId}`);
         this.initLocalWallet([this.userWalletAddress]);
+      });
+      // Listen for disconnect but it appears accountsChanged<empty> fires instead so maybe deprecated
+      this.provider.on('disconnect', (error: any) => {
+        console.log(`Metamask disconnected: ${error}`);
+        this.disconnectWallet();
       });
       // Connect Wallet
       this.connectWallet();
@@ -67,7 +75,7 @@ export class metaMaskModule {
    */
   initLocalWallet(accounts: any) {
     if(this.provider && accounts.length) {
-      this.userWalletAddress = accounts[0]; //await this.userWallet.getAddress();
+      this.userWalletAddress = accounts[0];
       this.provider.request({
         method: "eth_getBalance",
         params: [this.userWalletAddress, 'latest']
@@ -77,6 +85,8 @@ export class metaMaskModule {
         // Update Network Name
         this.setWalletNetwork(this.provider?.networkVersion);
       });
+    }else{
+      this.disconnectWallet();
     }
   }
 
@@ -85,8 +95,7 @@ export class metaMaskModule {
    * @param chainId
    */
   setWalletNetwork(chainId: any) {
-    const network = parseInt(chainId);
-    this.userWalletNetwork = chainIds[network] || 'Unknown Network';
+    this.userWalletNetwork = parseInt(chainId);
     // view refresh callback
     this.onUpdateCallback();
   }
@@ -103,10 +112,33 @@ export class metaMaskModule {
   }
 
   /**
+   * When disconnect or switched to empty account detected nuke values
+   */
+  disconnectWallet(){
+    this.userWalletAddress = '';
+    this.userWalletNetwork = 0;
+    this.userEthBalance = 0;
+    this.onUpdateCallback();
+  }
+
+  /**
    * Get MetaMask wallet as Signer
    */
   getSigner(){
     return this.web3provider.getSigner();
   }
 
+  /**
+   * Check current network is Goerli
+   */
+  isConnectedToGoerli(){
+    return this.userWalletNetwork == 5;
+  }
+
+  /**
+   * Getter to return Network Name
+   */
+  getUserWalletNetworkName(){
+    return chainIds[this.userWalletNetwork] || 'Unknown Network';
+  }
 }

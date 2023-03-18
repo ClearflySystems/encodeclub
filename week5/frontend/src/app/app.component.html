@@ -7,7 +7,7 @@
 
   <div class="navbar-nav flex-row flex-wrap ms-md-auto">
     <button class="btn btn-lg btn-light mx-3 my-2" (click)="metaMask.connectWallet()">
-      <small class="fs-6 lh-sm d-inline-block" *ngIf="metaMask.userWalletAddress">Connected to: {{metaMask.userWalletNetwork}}<br/>{{metaMask.userWalletAddress}}<br/>{{metaMask.userEthBalance}} ETH</small>
+      <small class="fs-6 lh-sm d-inline-block" *ngIf="metaMask.userWalletAddress">Connected to: {{metaMask.getUserWalletNetworkName()}}<br/>{{metaMask.userWalletAddress}}<br/>{{metaMask.userEthBalance}} ETH</small>
       <span *ngIf="!metaMask.userWalletAddress">Connect Wallet</span>
     </button>
   </div>
@@ -21,20 +21,21 @@
       <div class="col-sm-6">
         <h1 class="display-5 fw-bold">Lottery Menu</h1>
         <br/><br/>
-        <div *ngIf="metaMask.userWalletAddress">
+        <div *ngIf="metaMask.isConnectedToGoerli()">
           <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()" [disabled]="lotteryStatus.state=='Checking....'">Check Lottery State</button></p>
           <p class="fs-6"><strong>Lottery status: </strong> <span>{{lotteryStatus.state}}</span></p>
           <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
           <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>
         </div>
-        <div *ngIf="!metaMask.userWalletAddress">
+        <div *ngIf="!metaMask.userWalletAddress || !metaMask.isConnectedToGoerli()">
           <p>To Play B`Lotto you need to connect your MetaMask Wallet to the Goerli Network</p>
-          <p><button class="btn btn-lg btn-warning" type="button" (click)="metaMask.connectWallet()">Connect MetaMask</button></p>
+          <p *ngIf="!metaMask.userWalletAddress"><button class="btn btn-lg btn-warning" type="button" (click)="metaMask.connectWallet()">Connect MetaMask</button></p>
+          <p *ngIf="metaMask.userWalletAddress">Open MetaMask and Switch Network from {{metaMask.getUserWalletNetworkName()}} to Goerli</p>
         </div>
       </div>
       <div class="col-sm-6">
 
-        <div class="list-group w-auto" *ngIf="metaMask.userWalletAddress">
+        <div class="list-group w-auto" *ngIf="metaMask.isConnectedToGoerli()">
           <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
             <i class="bi bi-1-circle fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
@@ -97,7 +98,7 @@
   </div>
 
 
-  <div class="row align-items-md-stretch" *ngIf="metaMask.userWalletAddress">
+  <div class="row align-items-md-stretch" *ngIf="metaMask.isConnectedToGoerli()">
     <div class="col-md-6">
       <div class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
         <h2>Withdraw winnings</h2>
