@@ -1,39 +1,17 @@
 ## Prerequisites
 
-Node Js, NPM, Yarn, Nest JS, Angular CLI
+Node Js, NPM, Yarn, Angular CLI
 
 Windows users may need to allow execution of NPM scripts. Run PowerShell as Administrator and execute:
 ```
 Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ```
 
-### Setup Backend Nest JS project
+### Deploy smart contracts
 ```
-nest new backend
-cd backend
-yarn config set nodeLinker node-modules
-yarn install
+yarn run ts-node --files ./scripts/deploy.ts
 ```
 
-#### Add Swagger Backend API
-```
-yarn add @nestjs/swagger
-```
-
-#### Install Ethers
-```
-yarn add ethers@^5.7.2
-```
-
-
-##### Serve Backend App
-```
-yarn start:dev
-```
-http://localhost:3000
-
-
----
 
 ### Setup Frontend Angular APP with Bootstrap
 
