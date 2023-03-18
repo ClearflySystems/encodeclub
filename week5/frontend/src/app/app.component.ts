@@ -28,12 +28,11 @@ export class AppComponent{
 
   /**
    * App Component Constructor
-   * @param http
    * @param cdr
    */
   constructor(private cdr: ChangeDetectorRef) {
     // Define our MetaMask Wallet Provider with angular view updater as callback
-    this.metaMask = new metaMaskModule(() => cdr.detectChanges());
+    this.metaMask = new metaMaskModule(() => this.refreshUI());
     // Setup a Metamask Web3 provider
     this.defaultProvider = this.metaMask.web3provider;
     //this.defaultProvider = new ethers.providers.AlchemyProvider('goerli', environment.ALCHEMY_API_KEY);
@@ -56,8 +55,11 @@ export class AppComponent{
       this.defaultProvider
     );
 
+    // Object to store lottery status view vars
     this.lotteryStatus = {
-      state: 'Unknown',
+      owner: '',
+      state: 0,
+      tokens: 0,
       currentBlockDate: 'N/A',
       closingTimeDate: 'N/A'
     }
@@ -69,35 +71,78 @@ export class AppComponent{
    */
   async checkStatus(){
     if(this.lotteryContract) {
-      this.lotteryStatus.state = 'Checking....';
+      this.lotteryStatus.state = 3;
       console.log('Getting Contract State');
       const state = await this.lotteryContract['betsOpen']();
-      this.lotteryStatus.state = state? 'Open' : 'Closed';
+      this.lotteryStatus.state = state? 1 : 2;
       if (state) {
         const currentBlock = await this.defaultProvider.getBlock("latest");
         const closingTime = await this.lotteryContract['betsClosingTime']();
         this.lotteryStatus.currentBlockDate = new Date(currentBlock.timestamp * 1000);
         this.lotteryStatus.closingTimeDate = new Date(closingTime.toNumber() * 1000);
       }
+      const owner = await this.lotteryContract['owner']();
+      this.lotteryStatus.owner = owner.toString().toLowerCase() == this.metaMask.userWalletAddress.toString().toLowerCase();
     }else{
       alert('Error with LotteryContract');
     }
   }
 
-  openbets(){
-    alert('Open bets');
+  /**
+   * Open Lottery for placing bets
+   * @param datetime
+   */
+  async openbets( datetime: any ){
+    const now = new Date();
+    const closing = Date.parse(datetime);
+    if(isNaN(closing) || closing < (now.getTime() + 600000)){
+      alert('Please set a date/time that is in the future and more than 10 minutes');
+    }else{
+      if(this.lotteryContract) {
+        const openLottery = await this.lotteryContract['openBets']( closing / 1000);
+        console.log(openLottery);
+        await this.checkStatus();
+      }else{
+        alert('Error with LotteryContract');
+      }
+    }
   }
 
-  topupaccount(){
-    alert('Topup yer account');
+  /**
+   * Purchase Lottery Tokens from MetaMask Wallet
+   */
+  async topupaccount(amount:string = "10"){
+    let tokensOrdered = parseInt(amount);
+    if(!tokensOrdered || isNaN(tokensOrdered)){
+      alert('Invalid Token Amount');
+      return;
+    }
+    if(this.lotteryContract) {
+      const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
+      const tx = await connectContract['purchaseTokens']();
+      const rcpt = tx.wait();
+      console.log(rcpt);
+      await this.checkStatus();
+    }else{
+      alert('Error with LotteryContract');
+    }
+  }
+
+  /**
+   * Close Lottery to any further bets
+   */
+  async closebets(){
+    if(this.lotteryContract) {
+      const closeLottery = await this.lotteryContract['closeLottery']();
+      console.log(closeLottery);
+      await this.checkStatus();
+    }else{
+      alert('Error with LotteryContract');
+    }
   }
 
   betwithaccount(){
     alert('Place yer bets');
-  }
-
-  closebets(){
-    alert('Close bets');
   }
 
   checkplayprize(){
@@ -113,4 +158,25 @@ export class AppComponent{
     alert('Burn baby burn!!!');
   }
 
+  /**
+   * Getter for Lottery Status Label
+   */
+  getLotterStateLabel(){
+    switch(this.lotteryStatus.state){
+      case 1: return 'Open';
+      case 2: return 'Closed';
+      case 3: return 'Checking';
+      default: return 'Unknown';
+    }
+  }
+
+  /**
+   * Callback function to refresh angular UI after external updates.
+   */
+  async refreshUI(){
+    if(this.lotteryStatus.state !== 0){
+      await this.checkStatus();
+    }
+    this.cdr.detectChanges();
+  }
 }

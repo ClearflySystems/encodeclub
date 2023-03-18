@@ -19,13 +19,14 @@
   <div class="p-5 mb-4 bg-light rounded-3 opacity-75">
     <div class="row">
       <div class="col-sm-6">
-        <h1 class="display-5 fw-bold">Lottery Menu</h1>
-        <br/><br/>
+        <h1 class="display-5 fw-bold mb-2">Lottery Menu</h1>
         <div *ngIf="metaMask.isConnectedToGoerli()">
-          <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()" [disabled]="lotteryStatus.state=='Checking....'">Check Lottery State</button></p>
-          <p class="fs-6"><strong>Lottery status: </strong> <span>{{lotteryStatus.state}}</span></p>
+          <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()" [disabled]="lotteryStatus.state==3">Check Lottery State</button></p>
+          <p class="fs-6"><strong>Lottery status: </strong> <span>{{getLotterStateLabel()}}</span></p>
           <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
           <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>
+          <p class="fs-6"><strong>Connected as {{lotteryStatus.owner? 'owner' : 'player'}}: </strong> <span>{{metaMask.userWalletAddress}}</span></p>
+          <p class="fs-6"><strong>Available tokens: </strong> {{lotteryStatus.tokens}}</p>
         </div>
         <div *ngIf="!metaMask.userWalletAddress || !metaMask.isConnectedToGoerli()">
           <p>To Play B`Lotto you need to connect your MetaMask Wallet to the Goerli Network</p>
@@ -40,10 +41,21 @@
             <i class="bi bi-1-circle fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
-                <h6 class="mb-0">Open bets</h6>
-                <p class="mb-0 opacity-75"></p>
+                <h6 *ngIf="lotteryStatus.state!==1" class="mb-0">Set Lottery Closing time</h6>
+                <h6 *ngIf="lotteryStatus.state===1" class="mb-0">Lottery is open for bets</h6>
               </div>
-              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="openbets()">Go</button></small>
+              <span *ngIf="lotteryStatus.state===2" class="opacity-75 text-nowrap">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="openBetsDate"
+                    type="datetime-local"
+                    #openBetsDate
+                  />
+                  <button class="btn btn-sm btn-dark" (click)="openbets( openBetsDate.value )">Go</button>
+                </div>
+              </span>
             </div>
           </div>
 
@@ -51,10 +63,23 @@
             <i class="bi bi-2-circle fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
-                <h6 class="mb-0">Top up account tokens</h6>
-                <p class="mb-0 opacity-75"></p>
+                <h6 class="mb-0">Purchase Lottery tokens</h6>
+                <p class="mb-0 opacity-75">Select between 10 and 100 tokens</p>
               </div>
-              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="topupaccount()">Go</button></small>
+              <small class="opacity-75 text-nowrap">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    name="lotteryTokenCount"
+                    type="number"
+                    size="8"
+                    min="10"
+                    max="100"
+                    #lotteryTokenCount
+                  />
+                <button class="btn btn-sm btn-dark" (click)="topupaccount( lotteryTokenCount.value )">Go</button>
+                </div>
+              </small>
             </div>
           </div>
 
@@ -73,7 +98,7 @@
             <i class="bi bi-4-circle fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
-                <h6 class="mb-0">Close bets</h6>
+                <h6 class="mb-0">Close Lottery</h6>
                 <p class="mb-0 opacity-75"></p>
               </div>
               <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closebets()">Go</button></small>

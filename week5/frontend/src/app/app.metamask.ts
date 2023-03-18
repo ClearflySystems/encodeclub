@@ -45,6 +45,7 @@ export class metaMaskModule {
 
   /**
    * Setup MetaMask Provider with callbacks then connect.
+   * Using New MetaMask In Page detection
    */
   async initMetaMaskProvider() {
     this.provider = await detectEthereumProvider();
@@ -70,8 +71,19 @@ export class metaMaskModule {
   }
 
   /**
-   * Update Wallet Address, get balance and set network name
-   * @param accounts
+   * Initial Call to connect MetaMask wallet using the eth_requestAccounts call
+   */
+  connectWallet() {
+    if(this.provider) {
+      this.provider.request({method: "eth_requestAccounts"}).then((accounts: any) => {
+        this.initLocalWallet(accounts);
+      });
+    }
+  }
+
+  /**
+   * Initialise userWallet variables - Address, Balance and Network
+   * @param accounts - empty on disconnect
    */
   initLocalWallet(accounts: any) {
     if(this.provider && accounts.length) {
@@ -98,17 +110,6 @@ export class metaMaskModule {
     this.userWalletNetwork = parseInt(chainId);
     // view refresh callback
     this.onUpdateCallback();
-  }
-
-  /**
-   * Initial Call to connect MetaMask wallet using the eth_requestAccounts call
-   */
-  connectWallet() {
-    if(this.provider) {
-      this.provider.request({method: "eth_requestAccounts"}).then((accounts: any) => {
-        this.initLocalWallet(accounts);
-      });
-    }
   }
 
   /**
