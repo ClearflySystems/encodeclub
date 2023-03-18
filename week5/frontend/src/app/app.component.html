@@ -1,0 +1,117 @@
+<header class="navbar navbar-expand navbar-dark flex-column flex-md-row bd-navbar">
+  <div class="navbar-nav flex-row flex-wrap bd-navbar-nav">
+    <a class="navbar-brand mx-3" href="/" aria-label="Blotto">
+      <img src="../assets/lotto-balls.png" alt="Blotto" style="height:90px"/> <span class="fs-1 mx-2" style="vertical-align: middle"> Let's play B`Lotto</span>
+    </a>
+  </div>
+
+  <div class="navbar-nav flex-row flex-wrap ms-md-auto">
+    <button class="btn btn-lg btn-light mx-3 my-2" (click)="metaMask.connectWallet()">
+      <small class="fs-6 lh-sm d-inline-block" *ngIf="metaMask.userWalletAddress">Connected to: {{metaMask.userWalletNetwork}}<br/>{{metaMask.userWalletAddress}}<br/>{{metaMask.userEthBalance}} ETH</small>
+      <span *ngIf="!metaMask.userWalletAddress">Connect Wallet</span>
+    </button>
+  </div>
+</header>
+
+
+<div class="container py-4">
+
+  <div class="p-5 mb-4 bg-light rounded-3 opacity-75">
+    <div class="row">
+      <div class="col-sm-6">
+        <h1 class="display-5 fw-bold">Lottery Menu</h1>
+        <br/><br/>
+        <div *ngIf="metaMask.userWalletAddress">
+          <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()">Check Lottery State</button></p>
+          <p class="fs-6"><strong>Lottery status: </strong> <span>{{lotteryStatus.state}}</span></p>
+          <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
+          <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>
+        </div>
+        <div *ngIf="!metaMask.userWalletAddress">
+          <p>To Play B`Lotto you need to connect your MetaMask Wallet to the Goerli Network</p>
+          <p><button class="btn btn-lg btn-warning" type="button" (click)="metaMask.connectWallet()">Connect MetaMask</button></p>
+        </div>
+      </div>
+      <div class="col-sm-6">
+
+        <div class="list-group w-auto" *ngIf="metaMask.userWalletAddress">
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-1-circle fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Open bets</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="openbets()">Go</button></small>
+            </div>
+          </div>
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-2-circle fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Top up account tokens</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="topupaccount()">Go</button></small>
+            </div>
+          </div>
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-3-circle fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Bet with account</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="betwithaccount()">Go</button></small>
+            </div>
+          </div>
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-4-circle fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Close bets</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closebets()">Go</button></small>
+            </div>
+          </div>
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-5-circle fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Check player prize</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="checkplayprize()">Go</button></small>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <div class="row align-items-md-stretch" *ngIf="metaMask.userWalletAddress">
+    <div class="col-md-6">
+      <div class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
+        <h2>Withdraw winnings</h2>
+        <p>Yadayadadaa</p>
+        <button class="btn btn-outline-light" type="button" (click)="showmethemoney()">Show me the money</button>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="h-100 p-5 bg-light border rounded-3 opacity-7">
+        <h2>Burn Tokens</h2>
+        <p>Yadayadadaa</p>
+        <button class="btn btn-outline-secondary" type="button" (click)="burnbabyburn()">Burn Baby Burn</button>
+      </div>
+    </div>
+  </div>
+
+</div>
