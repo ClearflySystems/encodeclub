@@ -44,7 +44,7 @@ async function deployContracts( signer: Wallet ){
 
     // Get deployment transaction info
     const deployLotteryTxReceipt = await lotteryContract.deployTransaction.wait();
-    console.log(`Token Contract deployed at: ${lotteryContract.address}`);
+    console.log(`Lottery Contract deployed at: ${lotteryContract.address}`);
     console.log(deployLotteryTxReceipt);
 }
 

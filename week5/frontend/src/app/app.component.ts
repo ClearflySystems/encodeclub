@@ -5,8 +5,8 @@ import { BigNumber, Contract, ethers, providers, utils, Wallet } from 'ethers';
 import tokenJson from '../assets/LotteryToken.json';
 import lotteryJson from '../assets/LotteryContract.json';
 
-const LOTTERY_TOKEN_ADDRESS = '';
-const LOTTERY_CONTRACT_ADDRESS = '';
+const LOTTERY_TOKEN_ADDRESS = '0xa85cddc8308F870A4f365C9D7e4778eDA14F7590';
+const LOTTERY_CONTRACT_ADDRESS = '0x7Cf2139aA78de20CCd0Ec2Db5108472f85eDE763';
 
 
 @Component({
