@@ -17,8 +17,7 @@ const LOTTERY_CONTRACT_ADDRESS = '0x7Cf2139aA78de20CCd0Ec2Db5108472f85eDE763';
 })
 export class AppComponent{
   metaMask: metaMaskModule;
-  userWallet: Wallet;
-  defaultProvider: providers.Provider; // TODO change
+  defaultProvider: providers.Provider;
   tokenContractAddress: string;
   tokenContract: Contract | undefined;
   lotteryContractAddress: string;
@@ -35,12 +34,9 @@ export class AppComponent{
   constructor(private cdr: ChangeDetectorRef) {
     // Define our MetaMask Wallet Provider with angular view updater as callback
     this.metaMask = new metaMaskModule(() => cdr.detectChanges());
-    // TODO fix and connect with MetaMask Wallet
-    this.userWallet = ethers.Wallet.createRandom();
-    // Setup a default provider - TODO connect with metamask
-    //this.defaultProvider = new ethers.providers.Web3Provider(window.ethereum, 'goerli');
-    this.defaultProvider = new ethers.providers.AlchemyProvider('goerli', environment.ALCHEMY_API_KEY);
-
+    // Setup a Metamask Web3 provider
+    this.defaultProvider = this.metaMask.web3provider;
+    //this.defaultProvider = new ethers.providers.AlchemyProvider('goerli', environment.ALCHEMY_API_KEY);
 
     // Set Contract Addresses
     this.tokenContractAddress = LOTTERY_TOKEN_ADDRESS;

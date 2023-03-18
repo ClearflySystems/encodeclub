@@ -24,6 +24,7 @@ const chainIds: IchainIds = {
 /// @author Simon Thomas
 export class metaMaskModule {
   provider: MetaMaskInpageProvider | null | undefined;
+  web3provider: providers.Web3Provider;
   userWalletAddress: string = '';
   userWalletNetwork: string = '';
   userEthBalance: number = 0;
@@ -34,6 +35,7 @@ export class metaMaskModule {
    * @param onUpdateCallback
    */
   constructor( onUpdateCallback:Function ) {
+    this.web3provider = new providers.Web3Provider(window.ethereum);
     this.initMetaMaskProvider().catch(e => {
       console.log('Error initialising MetaMask Wallet Connection');
     });
@@ -47,11 +49,11 @@ export class metaMaskModule {
     this.provider = await detectEthereumProvider();
     if(this.provider) {
       // Set Account switch callback
-      this.provider.on('accountsChanged', (accounts: any) => {
+      this.web3provider.on('accountsChanged', (accounts: any) => {
         this.initLocalWallet(accounts);
       });
       // Set Network/Chain switch callback
-      this.provider.on('chainChanged', (chainId: any) => {
+      this.web3provider.on('chainChanged', (chainId: any) => {
         this.initLocalWallet([this.userWalletAddress]);
       });
       // Connect Wallet
@@ -102,11 +104,9 @@ export class metaMaskModule {
 
   /**
    * Get MetaMask wallet as Signer
-   * TODO
    */
   getSigner(){
-    //const provider = new ethers.providers.JsonRpcProvider();
-    //this.userWallet = provider.getSigner(this.userWalletAddress);
+    return this.web3provider.getSigner();
   }
 
 }
