@@ -58,12 +58,6 @@ Add to angular.json under styles/scripts in the build section:
 npm i ethers@^5.7.2
 ```
 
-#### Install dotenv - note fs, path and os needed here
-```
-npm install dotenv
-npm install fs path os
-```
-
 ##### To build and serve
 ```
 npm run start
