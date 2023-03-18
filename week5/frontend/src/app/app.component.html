@@ -22,7 +22,7 @@
         <h1 class="display-5 fw-bold">Lottery Menu</h1>
         <br/><br/>
         <div *ngIf="metaMask.userWalletAddress">
-          <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()">Check Lottery State</button></p>
+          <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()" [disabled]="lotteryStatus.state=='Checking....'">Check Lottery State</button></p>
           <p class="fs-6"><strong>Lottery status: </strong> <span>{{lotteryStatus.state}}</span></p>
           <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
           <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>

@@ -1,10 +1,10 @@
 import detectEthereumProvider from '@metamask/detect-provider';
 import { MetaMaskInpageProvider } from '@metamask/providers';
-import {utils} from "ethers";
+import {utils, providers} from "ethers";
 
 declare global {
   interface Window {
-    ethereum: MetaMaskInpageProvider
+    ethereum: providers.ExternalProvider
   }
 }
 
@@ -23,7 +23,6 @@ const chainIds: IchainIds = {
 /// @title A simple MetaMask Connector
 /// @author Simon Thomas
 export class metaMaskModule {
-
   provider: MetaMaskInpageProvider | null | undefined;
   userWalletAddress: string = '';
   userWalletNetwork: string = '';
