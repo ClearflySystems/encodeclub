@@ -6,8 +6,9 @@ import tokenJson from '../assets/LotteryToken.json';
 import lotteryJson from '../assets/LotteryContract.json';
 
 import {environment} from "../../environments/environment";
-const LOTTERY_TOKEN_ADDRESS = '0xa85cddc8308F870A4f365C9D7e4778eDA14F7590';
-const LOTTERY_CONTRACT_ADDRESS = '0x7Cf2139aA78de20CCd0Ec2Db5108472f85eDE763';
+const LOTTERY_TOKEN_ADDRESS = '0xc658f73a856F2D9e3ACb7fD6a1F51483DD411647';
+const LOTTERY_CONTRACT_ADDRESS = '0xDd7925285d273AF86C460fB704A5345c0fB44631';
+const TOKEN_RATIO = 1000000;
 
 
 @Component({
@@ -99,7 +100,8 @@ export class AppComponent{
       alert('Please set a date/time that is in the future and more than 10 minutes');
     }else{
       if(this.lotteryContract) {
-        const openLottery = await this.lotteryContract['openBets']( closing / 1000);
+        const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
+        const openLottery = await connectContract['openBets']( closing / 1000);
         console.log(openLottery);
         await this.checkStatus();
       }else{
@@ -117,9 +119,12 @@ export class AppComponent{
       alert('Invalid Token Amount');
       return;
     }
+   
     if(this.lotteryContract) {
       const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
-      const tx = await connectContract['purchaseTokens']();
+      const tx = await connectContract['purchaseTokens']({
+        value: ethers.utils.parseEther(amount).div(TOKEN_RATIO),
+    });
       const rcpt = tx.wait();
       console.log(rcpt);
       await this.checkStatus();
@@ -141,8 +146,22 @@ export class AppComponent{
     }
   }
 
-  betwithaccount(){
-    alert('Place yer bets');
+  async betwithaccount(){
+    if(this.lotteryContract) {
+      const allowTx = await this.tokenContract?.connect(this.metaMask.getSigner())['approve'](this.metaMask.userWalletAddress, ethers.constants.MaxUint256);
+      await allowTx.wait();
+      const state = await this.lotteryContract['betsOpen']();
+      if(state){
+        const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
+        const tx = await connectContract['bet']();
+        const rcpt = tx.wait();
+        console.log(rcpt);
+        await this.checkStatus();
+      }else{
+        alert('lottery closed')
+      }
+
+    }
   }
 
   checkplayprize(){
