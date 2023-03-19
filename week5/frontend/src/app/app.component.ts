@@ -6,7 +6,7 @@ import tokenJson from '../assets/LotteryToken.json';
 import lotteryJson from '../assets/LotteryContract.json';
 
 import {environment} from "../../environments/environment";
-const LOTTERY_TOKEN_ADDRESS = '0xc658f73a856F2D9e3ACb7fD6a1F51483DD411647';
+const LOTTERY_TOKEN_ADDRESS = '0xcBe3930C2bA5A8247870E735972120e634F40Cd3';
 const LOTTERY_CONTRACT_ADDRESS = '0xDd7925285d273AF86C460fB704A5345c0fB44631';
 const TOKEN_RATIO = 1000000;
 
@@ -148,19 +148,38 @@ export class AppComponent{
 
   async betwithaccount(){
     if(this.lotteryContract && this.tokenContract) {
-      const allowTx = await this.tokenContract.connect(this.metaMask.getSigner())['approve'](this.lotteryContract.address, ethers.constants.MaxUint256);
-      await allowTx.wait();
       const state = await this.lotteryContract['betsOpen']();
-      if(state){
-        const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
-        const tx = await connectContract['bet']();
-        const rcpt = tx.wait();
-        console.log(rcpt);
-        await this.checkStatus();
-      }else{
+      if (!state) {
         alert('lottery closed')
+        return 
+      }
+      const signer = this.metaMask.getSigner()
+      const allowanceBefore = await this.tokenContract['allowance'](await signer.getAddress(), this.tokenContractAddress)
+      const betPrice = await this.lotteryContract['betPrice']()
+      const betFee = await this.lotteryContract['betFee']()
+      const requiredBalance = betPrice.add(betFee)
+      let allowanceTxReceiptSuccess: boolean = false 
+      if (allowanceBefore.eq(0)) {
+        const allowTx = await this.tokenContract.connect(signer)['approve'](this.lotteryContractAddress, requiredBalance)
+        const receipt = await allowTx.wait()
+        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false 
+      } else if (allowanceBefore.lt(requiredBalance)) {
+        const amountToIncrease = requiredBalance.sub(allowanceBefore)
+        const allowTx = await this.tokenContract.connect(signer)['increaseAllowance'](this.lotteryContractAddress, amountToIncrease)
+        const receipt = await allowTx.wait()
+        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false 
+      } else { allowanceTxReceiptSuccess = true }
+
+      if (!allowanceTxReceiptSuccess) {
+        alert('There was an error while approving the lottery tokens')
+        return 
       }
 
+      const connectContract = this.lotteryContract.connect(signer);
+      const tx = await connectContract['bet']();
+      const rcpt = tx.wait();
+      console.log(rcpt);
+      await this.checkStatus();
     }
   }
 
