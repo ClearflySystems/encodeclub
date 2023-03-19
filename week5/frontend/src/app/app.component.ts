@@ -263,8 +263,22 @@ export class AppComponent{
    * Burn Token
    * TODO
    */
-  burnTokens(){
-    alert('Burn baby burn!!!');
+  async burnTokens(){
+    if (this.lotteryContract && this.tokenContract) {
+      alert('Burn baby burn!!!');
+      const amount = utils.parseEther(this.lotteryStatus.tokens)
+      const signer = this.metaMask.getSigner()
+      // approve contract to burn
+      const approveTx = await this.tokenContract.connect(signer)['approve'](this.lotteryContract.address, amount)
+      let receipt = await approveTx.wait()
+      if (receipt.status === 1) {
+        const tx = await this.lotteryContract.connect(signer)['returnTokens'](amount)
+        receipt = await tx.wait()
+        if (receipt.status === 1) alert(`Burned ${amount} tokens for Ether`)
+        else alert(`Failed to burn ${amount} tokens`)
+      } else alert(`Failed to approve ${amount} tokens`)
+      await this.checkStatus();
+    }
   }
 
   /**
