@@ -27,7 +27,7 @@
         <h1 class="display-5 fw-bold mb-2">Lottery Menu</h1>
         <div *ngIf="metaMask.isConnectedToGoerli()">
           <p><button class="btn btn-outline-success" type="button" (click)="checkStatus()" [disabled]="lotteryStatus.state==3">Check Lottery State</button></p>
-          <p class="fs-6"><strong>Lottery status: </strong> <span>{{getLotterStateLabel()}}</span></p>
+          <p class="fs-6"><strong>Lottery status: </strong> <span>{{getLotterStateLabel()}} - Prize Pool: <strong><i>{{lotteryStatus.prizepool}} BLT</i></strong></span></p>
           <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
           <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>
           <p class="fs-6"><strong>Available tokens: </strong> {{lotteryStatus.tokens}} BLT</p>
@@ -41,6 +41,7 @@
         <div>
           <p class="fs-6"><strong>Lottery Contract: </strong> <span><a href="https://goerli.etherscan.io/address/{{lotteryContractAddress}}" target="_blank">{{lotteryContractAddress}}</a></span></p>
           <p class="fs-6"><strong>Token Contract: </strong> <span><a href="https://goerli.etherscan.io/address/{{tokenContractAddress}}" target="_blank">{{tokenContractAddress}}</a></span></p>
+          <p class="fs-6"><strong>Lottery Owner Fee Pool: </strong> <span>{{lotteryStatus.ownerpool}}</span></p>
         </div>
       </div>
       <div class="col-sm-6">
@@ -51,8 +52,8 @@
             <i class="bi bi-currency-exchange fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
-                <h6 class="mb-0">Purchase Lottery tokens 1ETH = 100BLT Ratio</h6>
-                <p class="mb-0 opacity-75">Select between 0.01 and 10 BLT tokens</p>
+                <h6 class="mb-0">Purchase Lottery tokens 1ETH = {{tokenRatio}}BLT Ratio</h6>
+                <p class="mb-0 opacity-75">Select between 1 and {{tokenRatio}} BLT tokens</p>
               </div>
               <small class="opacity-75 text-nowrap">
                 <div class="input-group">
@@ -61,8 +62,6 @@
                     name="lotteryTokenCount"
                     type="number"
                     size="8"
-                    min="10"
-                    max="100"
                     #lotteryTokenCount
                   />
                 <button class="btn btn-sm btn-dark" (click)="buyTokens( lotteryTokenCount.value )">Go</button>
@@ -76,7 +75,7 @@
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
                 <h6 class="mb-0">Place your bets</h6>
-                <p class="mb-0 opacity-75"></p>
+                <p class="mb-0 opacity-75">Select between 1 and 10 Entries</p>
               </div>
               <small class="opacity-75 text-nowrap">
                 <div class="input-group">
@@ -85,8 +84,8 @@
                     name="spendLotteryTokens"
                     type="number"
                     size="8"
-                    min="10"
-                    max="100"
+                    min="1"
+                    max="10"
                     #spendLotteryTokens
                   />
                   <button class="btn btn-sm btn-dark" (click)="placeBets( spendLotteryTokens.value )">Go</button>
