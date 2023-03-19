@@ -210,6 +210,11 @@ export class AppComponent{
    * @param amount
    */
   async placeBets(amount:string = "10"){
+    // check we have Tokens first
+    if(this.lotteryStatus.tokens <= 0){
+      alert('You need to buy Lottery Tokens first.');
+      return;
+    }
     // Connect Signer to contracts
     const connectedLotteryContract = this.getLotteryContractOwnerSigned();
     const connectedTokenContract = this.getTokenContractOwnerSigned();

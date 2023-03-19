@@ -55,7 +55,7 @@
                 <h6 class="mb-0">Purchase Lottery tokens 1ETH = {{tokenRatio}}BLT Ratio</h6>
                 <p class="mb-0 opacity-75">Select between 1 and {{tokenRatio}} BLT tokens</p>
               </div>
-              <small class="opacity-75 text-nowrap">
+              <small *ngIf="lotteryStatus.loading != 1" class="opacity-75 text-nowrap">
                 <div class="input-group">
                   <input
                     class="form-control"
@@ -77,7 +77,7 @@
                 <h6 class="mb-0">Place your bets</h6>
                 <p class="mb-0 opacity-75">Select between 1 and 10 Entries</p>
               </div>
-              <small class="opacity-75 text-nowrap">
+              <small *ngIf="lotteryStatus.loading != 1 && lotteryStatus.tokens > 0" class="opacity-75 text-nowrap">
                 <div class="input-group">
                   <input
                     class="form-control"
@@ -91,6 +91,7 @@
                   <button class="btn btn-sm btn-dark" (click)="placeBets( spendLotteryTokens.value )">Go</button>
                 </div>
               </small>
+              <span *ngIf="lotteryStatus.tokens <= 0" class="opacity-75 text-nowrap">Buy Tokens First</span>
             </div>
           </div>
 
@@ -101,7 +102,7 @@
                 <h6 class="mb-0">Check player prize</h6>
                 <p class="mb-0 opacity-75"></p>
               </div>
-              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="displayPrize()">Go</button></small>
+              <small *ngIf="lotteryStatus.loading != 1" class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="displayPrize()">Go</button></small>
             </div>
           </div>
 
@@ -113,7 +114,7 @@
                 <h6 *ngIf="lotteryStatus.state!==1" class="mb-0">Set Lottery Closing time</h6>
                 <h6 *ngIf="lotteryStatus.state===1" class="mb-0">Lottery is open for bets</h6>
               </div>
-              <span *ngIf="lotteryStatus.state===2 && lotteryStatus.owner" class="opacity-75 text-nowrap">
+              <span *ngIf="lotteryStatus.loading != 1 && lotteryStatus.state===2 && lotteryStatus.owner" class="opacity-75 text-nowrap">
                 <div class="input-group">
                   <input
                     class="form-control"
@@ -136,7 +137,7 @@
                 <h6 class="mb-0">Close Lottery</h6>
                 <p class="mb-0 opacity-75"></p>
               </div>
-              <span *ngIf="lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closeLottery()">Go</button></span>
+              <span *ngIf="lotteryStatus.loading != 1 && lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closeLottery()">Go</button></span>
               <span *ngIf="!lotteryStatus.owner" class="opacity-75 text-nowrap">Admin only</span>
               <span *ngIf="lotteryStatus.owner && lotteryStatus.state != 1">Not yet open</span>
             </div>
@@ -149,7 +150,7 @@
                 <h6 class="mb-0">Transfer Ownership</h6>
                 <p class="mb-0 opacity-75"></p>
               </div>
-              <span *ngIf="lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap">
+              <span *ngIf="lotteryStatus.loading != 1 && lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap">
                 <div class="input-group">
                   <input
                     class="form-control"
@@ -195,7 +196,7 @@
         <h2>OwnerPool Holdings</h2>
         <div *ngIf="lotteryStatus.ownerpool>0">
           <p>Owner Pool fund: {{lotteryStatus.ownerpool}}</p>
-          <button class="btn btn-outline-light" type="button" (click)="withdrawTokens()">Show me the money</button>
+          <button *ngIf="lotteryStatus.loading != 1" class="btn btn-outline-light" type="button" (click)="withdrawTokens()">Show me the money</button>
         </div>
         <div *ngIf="lotteryStatus.ownerpool==0">
           <p>Owner Pool fund: empty</p>
@@ -208,7 +209,7 @@
         <h2>Burn Tokens</h2>
         <div *ngIf="lotteryStatus.tokens>0">
           <p>Burn your BLT ({{lotteryStatus.tokens}}) in return for ETH</p>
-          <button class="btn btn-danger" type="button" (click)="burnTokens()">Burn Baby Burn</button>
+          <button *ngIf="lotteryStatus.loading != 1" class="btn btn-danger" type="button" (click)="burnTokens()">Burn Baby Burn</button>
         </div>
         <div *ngIf="lotteryStatus.tokens==0">
           <p>Lottery Token fund: empty</p>
