@@ -227,7 +227,7 @@ export class AppComponent{
     let allowanceTxReceiptSuccess: boolean = false;
     // Calculate required balance to approve
     const allowanceBefore = await connectedTokenContract['allowance'](
-      this.metaMask.getSigner(),
+      await this.metaMask.getSigner().getAddress(),
       this.tokenContractAddress
     );
     const betPrice = await connectedLotteryContract['betPrice']();
