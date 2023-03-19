@@ -122,7 +122,7 @@
                     type="datetime-local"
                     #openBetsDate
                   />
-                  <button class="btn btn-sm btn-dark" (click)="openBets( openBetsDate.value )">Go</button>
+                  <button class="btn btn-sm btn-dark" (click)="openLottery( openBetsDate.value )">Go</button>
                 </div>
               </span>
               <span *ngIf="!lotteryStatus.owner" class="opacity-75 text-nowrap">Admin only</span>

@@ -65,6 +65,12 @@ export class metaMaskModule {
         console.log(`Metamask disconnected: ${error}`);
         this.disconnectWallet();
       });
+      // On Message notification
+      this.provider.on('message', (message: any) => {
+        console.log(message);
+        alert(message);
+        this.onUpdateCallback();
+      });
       // Connect Wallet
       this.connectWallet();
     }
@@ -99,6 +105,23 @@ export class metaMaskModule {
       });
     }else{
       this.disconnectWallet();
+    }
+  }
+
+  /**
+   * Allow UI to call balance refresh after transactions.
+   */
+  async refreshWallet(){
+    if(this.provider && this.userWalletAddress) {
+      this.provider.request({
+        method: "eth_getBalance",
+        params: [this.userWalletAddress, 'latest']
+      }).then(async (balanceBN: any) => {
+        const balanceStr = utils.formatEther(balanceBN);
+        this.userEthBalance = parseFloat(balanceStr.toString());
+        // Update Network Name
+        this.setWalletNetwork(this.provider?.networkVersion);
+      });
     }
   }
 

@@ -118,7 +118,7 @@ export class AppComponent{
    * Open Lottery for placing bets
    * @param datetime
    */
-  async openBets( datetime: any ){
+  async openLottery( datetime: any ){
     const now = new Date();
     const closing = Date.parse(datetime);
     if(isNaN(closing) || closing < (now.getTime() + 600000)){
@@ -157,7 +157,7 @@ export class AppComponent{
       });
       const receipt = await tx.wait();
       console.log(receipt);
-      await this.checkStatus();
+      await this.metaMask.refreshWallet();
     }catch (e){
       this.displayError(e);
     }
@@ -255,8 +255,7 @@ export class AppComponent{
     const tx = await connectedLotteryContract['betMany'](entries);
     const receipt = await tx.wait();
     console.log(receipt);
-    await this.checkStatus();
-
+    await this.metaMask.refreshWallet();
   }
 
   /**
@@ -274,7 +273,7 @@ export class AppComponent{
     const receipt = await tx.wait();
     if (receipt.status === 1) {
       alert(`Withdrawn prize of ${amount}`);
-      await this.checkStatus();
+      await this.metaMask.refreshWallet();
     } else {
       this.displayError(`Failed to withdraw the prize of ${amount}`);
     }
@@ -304,8 +303,7 @@ export class AppComponent{
     } else {
       alert(`Failed to approve ${amount} tokens`);
     }
-    await this.checkStatus();
-
+    await this.metaMask.refreshWallet();
   }
 
   /**
@@ -324,7 +322,7 @@ export class AppComponent{
       } else {
         alert(`Failed to withdraw ${amountToWithdraw}`);
       }
-      await this.checkStatus();
+      await this.metaMask.refreshWallet();
     }
   }
 
