@@ -147,8 +147,8 @@ export class AppComponent{
   }
 
   async betwithaccount(){
-    if(this.lotteryContract) {
-      const allowTx = await this.tokenContract?.connect(this.metaMask.getSigner())['approve'](this.metaMask.userWalletAddress, ethers.constants.MaxUint256);
+    if(this.lotteryContract && this.tokenContract) {
+      const allowTx = await this.tokenContract.connect(this.metaMask.getSigner())['approve'](this.lotteryContract.address, ethers.constants.MaxUint256);
       await allowTx.wait();
       const state = await this.lotteryContract['betsOpen']();
       if(state){
