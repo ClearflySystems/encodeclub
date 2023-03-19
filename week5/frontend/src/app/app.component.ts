@@ -10,6 +10,8 @@ const LOTTERY_TOKEN_ADDRESS = '0xcBe3930C2bA5A8247870E735972120e634F40Cd3';
 const LOTTERY_CONTRACT_ADDRESS = '0xDd7925285d273AF86C460fB704A5345c0fB44631';
 const TOKEN_RATIO = 1000000;
 
+const BET_PRICE = 10;
+const BET_FEE = 2;
 
 @Component({
   selector: 'app-root',
@@ -61,10 +63,14 @@ export class AppComponent{
       owner: '',
       state: 0,
       tokens: 0,
+      prizes: 0,
+      ownerpool: 0,
       currentBlockDate: 'N/A',
-      closingTimeDate: 'N/A'
+      closingTimeDate: 'N/A',
+      loading: 0
     }
 
+    this.checkStatus();
   }
 
   /**
@@ -73,19 +79,38 @@ export class AppComponent{
   async checkStatus(){
     if(this.lotteryContract) {
       this.lotteryStatus.state = 3;
+      this.lotteryStatus.loading = 1;
       console.log('Getting Contract State');
       const state = await this.lotteryContract['betsOpen']();
       this.lotteryStatus.state = state? 1 : 2;
       if (state) {
+        // TODO get closing date direct from contract
         const currentBlock = await this.defaultProvider.getBlock("latest");
         const closingTime = await this.lotteryContract['betsClosingTime']();
         this.lotteryStatus.currentBlockDate = new Date(currentBlock.timestamp * 1000);
         this.lotteryStatus.closingTimeDate = new Date(closingTime.toNumber() * 1000);
       }
+      // Get Token Balance
+      if(this.tokenContract) {
+        this.tokenContract['balanceOf'](this.metaMask.userWalletAddress).then((balance:BigNumber) => {
+          this.lotteryStatus.tokens = utils.formatEther(balance);
+        });
+      }
+
+      // Are we the owner
       const owner = await this.lotteryContract['owner']();
       this.lotteryStatus.owner = owner.toString().toLowerCase() == this.metaMask.userWalletAddress.toString().toLowerCase();
+
+      // Get Ownerpool fund
+      if(this.lotteryStatus.ownerpool){
+        this.lotteryContract['ownerPool']().then((balance:BigNumber) => {
+          this.lotteryStatus.ownerpool = utils.formatEther(balance);
+        });
+      }
+
+      this.lotteryStatus.loading = 0;
     }else{
-      alert('Error with LotteryContract');
+      this.displayError('Error with LotteryContract');
     }
   }
 
@@ -93,19 +118,23 @@ export class AppComponent{
    * Open Lottery for placing bets
    * @param datetime
    */
-  async openbets( datetime: any ){
+  async openBets( datetime: any ){
     const now = new Date();
     const closing = Date.parse(datetime);
     if(isNaN(closing) || closing < (now.getTime() + 600000)){
-      alert('Please set a date/time that is in the future and more than 10 minutes');
+      this.displayError('Please set a date/time that is in the future and more than 10 minutes');
     }else{
-      if(this.lotteryContract) {
-        const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
-        const openLottery = await connectContract['openBets']( closing / 1000);
-        console.log(openLottery);
+      this.lotteryStatus.loading = 1;
+      try {
+        const connectContract = this.getLotteryContractOwnerSigned();
+        const tx = await connectContract['openBets']( closing / 1000, {
+          gasLimit:100000
+        });
+        const rcpt = await tx.wait();
+        console.log(rcpt);
         await this.checkStatus();
-      }else{
-        alert('Error with LotteryContract');
+      }catch (e){
+        this.displayError(e);
       }
     }
   }
@@ -113,40 +142,75 @@ export class AppComponent{
   /**
    * Purchase Lottery Tokens from MetaMask Wallet
    */
-  async topupaccount(amount:string = "10"){
-    let tokensOrdered = parseInt(amount);
-    if(!tokensOrdered || isNaN(tokensOrdered)){
-      alert('Invalid Token Amount');
+  async buyTokens(amount:string = "1"){
+    let tokensOrdered = parseFloat(amount);
+    let tokensRequired = tokensOrdered / TOKEN_RATIO;
+    if(!tokensOrdered || isNaN(tokensOrdered) || tokensOrdered == 0){
+      this.displayError('Invalid Token Amount');
       return;
     }
-   
-    if(this.lotteryContract) {
-      const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
+    try {
+      this.lotteryStatus.loading = 1;
+      const connectContract = this.getLotteryContractOwnerSigned();
       const tx = await connectContract['purchaseTokens']({
-        value: ethers.utils.parseEther(amount).div(TOKEN_RATIO),
-    });
-      const rcpt = tx.wait();
+        value: utils.parseEther(tokensRequired.toFixed(18)) // convert to WEI - ethers.utils.parseEther(amount).div(TOKEN_RATIO)
+      });
+      const rcpt = await tx.wait();
       console.log(rcpt);
       await this.checkStatus();
-    }else{
-      alert('Error with LotteryContract');
+    }catch (e){
+      this.displayError(e);
     }
   }
 
   /**
    * Close Lottery to any further bets
    */
-  async closebets(){
-    if(this.lotteryContract) {
-      const closeLottery = await this.lotteryContract['closeLottery']();
-      console.log(closeLottery);
+  async closeLottery(){
+    if(!this.lotteryStatus.closingTimeDate){
+      return;
+    }
+    const now = new Date();
+    const closing = Date.parse(this.lotteryStatus.closingTimeDate);
+    if(closing > now.getTime()){
+      this.displayError('Can not be close until after: ' + this.lotteryStatus.closingTimeDate);
+      return;
+    }
+    try {
+      this.lotteryStatus.loading = 1;
+      const connectContract = this.getLotteryContractOwnerSigned();
+      const tx = await connectContract['closeLottery']({
+        gasLimit:100000
+      });
+      const rcpt = await tx.wait();
+      console.log(rcpt);
       await this.checkStatus();
-    }else{
-      alert('Error with LotteryContract');
+    }catch (e){
+      this.displayError(e);
     }
   }
 
-  async betwithaccount(){
+  /**
+   * Check Prizes mapping for user address for any claimable BLT
+   */
+  async displayPrize(){
+    try {
+      if(this.lotteryContract) {
+        this.lotteryContract['prize'](this.metaMask.userWalletAddress).then((balance:BigNumber) => {
+          this.lotteryStatus.prizes = utils.formatEther(balance);
+          alert('Prize total for your address: ' + this.lotteryStatus.prizes);
+        });
+      }
+    }catch (e){
+      this.displayError(e);
+    }
+  }
+  /**
+   * Place Bet with account
+   * TODO
+   * @param amount
+   */
+  async placeBets(amount:string = "10"){
     if(this.lotteryContract && this.tokenContract) {
       const state = await this.lotteryContract['betsOpen']();
       if (!state) {
@@ -183,17 +247,42 @@ export class AppComponent{
     }
   }
 
-  checkplayprize(){
-    alert('Check prize');
-  }
-
-
-  showmethemoney(){
+  /**
+   * Claim Prize Money amount
+   * TODO
+   */
+  claimPrize(){
+    if(this.lotteryStatus.prizes == 0){
+      alert('No claimable prizes - check for prizes first');
+      return;
+    }
     alert('Show me the Money!!!');
   }
 
-  burnbabyburn(){
+  /**
+   * Burn Token
+   * TODO
+   */
+  burnTokens(){
     alert('Burn baby burn!!!');
+  }
+
+  /**
+   * Owner pool/fees withdrawl
+   */
+  withdrawTokens(){
+    alert('Show me the Money!!!');
+  }
+
+  /**
+   * Get Lottery Contract with Owner as Signer for Read/Write operations
+   */
+  getLotteryContractOwnerSigned(){
+    if(this.lotteryContract){
+      return this.lotteryContract.connect( this.metaMask.getSigner() );
+    }else{
+      throw new Error('Error with Lottery Contract');
+    }
   }
 
   /**
@@ -216,5 +305,13 @@ export class AppComponent{
       await this.checkStatus();
     }
     this.cdr.detectChanges();
+  }
+
+  /**
+   * Display Error - todo add Toast/Alert
+   */
+  displayError(e:any){
+    this.lotteryStatus.loading = 0;
+    alert(e);
   }
 }
