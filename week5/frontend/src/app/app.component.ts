@@ -6,12 +6,12 @@ import tokenJson from '../assets/LotteryToken.json';
 import lotteryJson from '../assets/LotteryContract.json';
 
 import {environment} from "../../environments/environment";
-const LOTTERY_TOKEN_ADDRESS = '0xf3124cdFa75B15ca2f0f18F2E9F962FE387d8f01';//'0xa85cddc8308F870A4f365C9D7e4778eDA14F7590';
-const LOTTERY_CONTRACT_ADDRESS = '0x7Cf2139aA78de20CCd0Ec2Db5108472f85eDE763';
+const LOTTERY_TOKEN_ADDRESS = '0xc658f73a856F2D9e3ACb7fD6a1F51483DD411647';
+const LOTTERY_CONTRACT_ADDRESS = '0xDd7925285d273AF86C460fB704A5345c0fB44631';
+const TOKEN_RATIO = 1000000;
 
 const BET_PRICE = 10;
 const BET_FEE = 2;
-const TOKEN_RATIO = 100;
 
 @Component({
   selector: 'app-root',
@@ -153,7 +153,7 @@ export class AppComponent{
       this.lotteryStatus.loading = 1;
       const connectContract = this.getLotteryContractOwnerSigned();
       const tx = await connectContract['purchaseTokens']({
-        value: utils.parseEther(tokensRequired.toFixed(18)) // convert to WEI
+        value: utils.parseEther(tokensRequired.toFixed(18)) // convert to WEI - ethers.utils.parseEther(amount).div(TOKEN_RATIO)
       });
       const rcpt = await tx.wait();
       console.log(rcpt);
@@ -205,14 +205,27 @@ export class AppComponent{
       this.displayError(e);
     }
   }
-
   /**
    * Place Bet with account
    * TODO
    * @param amount
    */
-  placeBets(amount:string = "10"){
-    alert('Place yer bets');
+  async placeBets(amount:string = "10"){
+    if(this.lotteryContract && this.tokenContract) {
+      const allowTx = await this.tokenContract.connect(this.metaMask.getSigner())['approve'](this.lotteryContract.address, ethers.constants.MaxUint256);
+      await allowTx.wait();
+      const state = await this.lotteryContract['betsOpen']();
+      if(state){
+        const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
+        const tx = await connectContract['bet']();
+        const rcpt = tx.wait();
+        console.log(rcpt);
+        await this.checkStatus();
+      }else{
+        alert('lottery closed')
+      }
+
+    }
   }
 
   /**
