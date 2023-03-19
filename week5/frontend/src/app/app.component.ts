@@ -42,24 +42,10 @@ export class AppComponent{
     this.lotteryContractAddress = LOTTERY_CONTRACT_ADDRESS;
     this.tokenRatio = TOKEN_RATIO;
 
-    // Set Token Contract Object
-    this.tokenContract = new Contract(
-      this.tokenContractAddress,
-      tokenJson.abi,
-      this.defaultProvider
-    );
-
-    // Set Lottery Contract Object
-    this.lotteryContract = new Contract(
-      this.lotteryContractAddress,
-      lotteryJson.abi,
-      this.defaultProvider
-    );
-
     // Object to store lottery status view vars
     this.lotteryStatus = {
       owner: '',
-      state: 0,
+      state: 1,
       tokens: 0,
       prizes: 0,
       ownerpool: 0,
@@ -68,8 +54,28 @@ export class AppComponent{
       closingTimeDate: 'N/A',
       loading: 0
     }
+  }
 
-    this.checkStatus();
+  /**
+   * Init Contracts only if Goerli Network
+   */
+  initContracts(){
+    if(!this.lotteryContract) {
+      console.log('Setup Contracts');
+      // Set Token Contract Object
+      this.tokenContract = new Contract(
+        this.tokenContractAddress,
+        tokenJson.abi,
+        this.defaultProvider
+      );
+
+      // Set Lottery Contract Object
+      this.lotteryContract = new Contract(
+        this.lotteryContractAddress,
+        lotteryJson.abi,
+        this.defaultProvider
+      );
+    }
   }
 
   /**
@@ -79,6 +85,7 @@ export class AppComponent{
     if(!this.metaMask.isConnectedToGoerli()){
       return;
     }
+    this.initContracts();
     if(this.lotteryContract) {
       this.lotteryStatus.state = 3;
       this.lotteryStatus.loading = 1;
@@ -112,6 +119,7 @@ export class AppComponent{
       });
 
       this.lotteryStatus.loading = 0;
+      this.cdr.detectChanges();
     }else{
       this.displayError('Error with LotteryContract');
     }

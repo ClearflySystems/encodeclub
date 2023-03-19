@@ -52,13 +52,16 @@ export class metaMaskModule {
     if(this.provider) {
       // Set Account switch callback
       this.provider.on('accountsChanged', async (accounts: any) => {
-        console.log(`Metamask account switched: ${accounts}`);
-        await this.initLocalWallet(accounts);
+        //console.log(`Metamask account switched: ${accounts}`);
+        //await this.initLocalWallet(accounts);
+        document.location.reload();
       });
       // Set Network/Chain switch callback
       this.provider.on('chainChanged', async (chainId: any) => {
         console.log(`Metamask chain switched: ${chainId}`);
-        await this.initLocalWallet([this.userWalletAddress]);
+        // await this.initLocalWallet([this.userWalletAddress]);
+        // window.ethereum is stuck on old network so force page reload.
+        document.location.reload();
       });
       // Listen for disconnect but it appears accountsChanged<empty> fires instead so maybe deprecated
       this.provider.on('disconnect', (error: any) => {
