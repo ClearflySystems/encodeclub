@@ -6,9 +6,14 @@
   </div>
 
   <div class="navbar-nav flex-row flex-wrap ms-md-auto">
-    <button class="btn btn-lg btn-light mx-3 my-2" (click)="metaMask.connectWallet()">
-      <small class="fs-6 lh-sm d-inline-block" *ngIf="metaMask.userWalletAddress">Connected to: {{metaMask.getUserWalletNetworkName()}}<br/>{{metaMask.userWalletAddress}}<br/>{{metaMask.userEthBalance}} ETH</small>
+    <button *ngIf="!metaMask.userWalletAddress" class="btn btn-lg btn-light mx-3 my-2" (click)="metaMask.connectWallet()">
       <span *ngIf="!metaMask.userWalletAddress">Connect Wallet</span>
+    </button>
+    <button *ngIf="metaMask.userWalletAddress" class="btn btn-lg btn-light mx-3 my-2">
+      <small class="fs-6 lh-sm d-inline-block">Connected to: {{metaMask.getUserWalletNetworkName()}}
+        <br/>{{metaMask.userWalletAddress}}
+        <br/>{{metaMask.userEthBalance}} ETH
+      </small>
     </button>
   </div>
 </header>
@@ -26,7 +31,7 @@
           <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
           <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>
           <p class="fs-6"><strong>Connected as {{lotteryStatus.owner? 'owner' : 'player'}}: </strong> <span>{{metaMask.userWalletAddress}}</span></p>
-          <p class="fs-6"><strong>Available tokens: </strong> {{lotteryStatus.tokens}}</p>
+          <p class="fs-6"><strong>Available tokens: </strong> {{lotteryStatus.tokens}} BLT</p>
         </div>
         <div *ngIf="!metaMask.userWalletAddress || !metaMask.isConnectedToGoerli()">
           <p>To Play B`Lotto you need to connect your MetaMask Wallet to the Goerli Network</p>
@@ -37,34 +42,13 @@
       <div class="col-sm-6">
 
         <div class="list-group w-auto" *ngIf="metaMask.isConnectedToGoerli()">
-          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-            <i class="bi bi-1-circle fs-5"></i>
-            <div class="d-flex gap-2 w-100 justify-content-between">
-              <div>
-                <h6 *ngIf="lotteryStatus.state!==1" class="mb-0">Set Lottery Closing time</h6>
-                <h6 *ngIf="lotteryStatus.state===1" class="mb-0">Lottery is open for bets</h6>
-              </div>
-              <span *ngIf="lotteryStatus.state===2" class="opacity-75 text-nowrap">
-                <div class="input-group">
-                  <input
-                    class="form-control"
-                    placeholder="yyyy-mm-dd"
-                    name="openBetsDate"
-                    type="datetime-local"
-                    #openBetsDate
-                  />
-                  <button class="btn btn-sm btn-dark" (click)="openbets( openBetsDate.value )">Go</button>
-                </div>
-              </span>
-            </div>
-          </div>
 
           <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-            <i class="bi bi-2-circle fs-5"></i>
+            <i class="bi bi-currency-exchange fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
-                <h6 class="mb-0">Purchase Lottery tokens</h6>
-                <p class="mb-0 opacity-75">Select between 10 and 100 tokens</p>
+                <h6 class="mb-0">Purchase Lottery tokens 1ETH = 100BLT Ratio</h6>
+                <p class="mb-0 opacity-75">Select between 0.01 and 10 BLT tokens</p>
               </div>
               <small class="opacity-75 text-nowrap">
                 <div class="input-group">
@@ -77,65 +61,133 @@
                     max="100"
                     #lotteryTokenCount
                   />
-                <button class="btn btn-sm btn-dark" (click)="topupaccount( lotteryTokenCount.value )">Go</button>
+                <button class="btn btn-sm btn-dark" (click)="buyTokens( lotteryTokenCount.value )">Go</button>
                 </div>
               </small>
             </div>
           </div>
 
           <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-            <i class="bi bi-3-circle fs-5"></i>
+            <i class="bi bi-cash-coin fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
-                <h6 class="mb-0">Bet with account</h6>
+                <h6 class="mb-0">Place your bets</h6>
                 <p class="mb-0 opacity-75"></p>
               </div>
-              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="betwithaccount()">Go</button></small>
+              <small class="opacity-75 text-nowrap">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    name="spendLotteryTokens"
+                    type="number"
+                    size="8"
+                    min="10"
+                    max="100"
+                    #spendLotteryTokens
+                  />
+                  <button class="btn btn-sm btn-dark" (click)="placeBets( spendLotteryTokens.value )">Go</button>
+                </div>
+              </small>
             </div>
           </div>
 
           <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-            <i class="bi bi-4-circle fs-5"></i>
-            <div class="d-flex gap-2 w-100 justify-content-between">
-              <div>
-                <h6 class="mb-0">Close Lottery</h6>
-                <p class="mb-0 opacity-75"></p>
-              </div>
-              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closebets()">Go</button></small>
-            </div>
-          </div>
-
-          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
-            <i class="bi bi-5-circle fs-5"></i>
+            <i class="bi bi-trophy fs-5"></i>
             <div class="d-flex gap-2 w-100 justify-content-between">
               <div>
                 <h6 class="mb-0">Check player prize</h6>
                 <p class="mb-0 opacity-75"></p>
               </div>
-              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="checkplayprize()">Go</button></small>
+              <small class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="displayPrize()">Go</button></small>
+            </div>
+          </div>
+
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-clock-history fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 *ngIf="lotteryStatus.state!==1" class="mb-0">Set Lottery Closing time</h6>
+                <h6 *ngIf="lotteryStatus.state===1" class="mb-0">Lottery is open for bets</h6>
+              </div>
+              <span *ngIf="lotteryStatus.state===2 && lotteryStatus.owner" class="opacity-75 text-nowrap">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="openBetsDate"
+                    type="datetime-local"
+                    #openBetsDate
+                  />
+                  <button class="btn btn-sm btn-dark" (click)="openBets( openBetsDate.value )">Go</button>
+                </div>
+              </span>
+              <span *ngIf="!lotteryStatus.owner" class="opacity-75 text-nowrap">Admin only</span>
+            </div>
+          </div>
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-calendar-x fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Close Lottery</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <span *ngIf="lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closeLottery()">Go</button></span>
+              <span *ngIf="!lotteryStatus.owner" class="opacity-75 text-nowrap">Admin only</span>
+              <span *ngIf="lotteryStatus.owner && lotteryStatus.state != 1">Not yet open</span>
             </div>
           </div>
 
         </div>
       </div>
-
+    </div>
+    <div *ngIf="lotteryStatus.loading" class="col-sm-12">
+      <br/>
+      <p><strong>Processing please wait......</strong></p>
+      <div class="progress" role="progressbar">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" style="width: 100%"></div>
+      </div>
     </div>
   </div>
 
 
   <div class="row align-items-md-stretch" *ngIf="metaMask.isConnectedToGoerli()">
     <div class="col-md-6">
-      <div class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
+
+      <div *ngIf="!lotteryStatus.owner" class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
         <h2>Withdraw winnings</h2>
-        <p>Yadayadadaa</p>
-        <button class="btn btn-outline-light" type="button" (click)="showmethemoney()">Show me the money</button>
+        <div *ngIf="lotteryStatus.prizes>0">
+          <p>Claimable Prize fund: {{lotteryStatus.prizes}}</p>
+          <button class="btn btn-outline-light" type="button" (click)="claimPrize()">Show me the money</button>
+        </div>
+        <div *ngIf="lotteryStatus.prizes==0">
+          <p>Claimable Prize fund: empty</p>
+        </div>
       </div>
+
+      <div *ngIf="lotteryStatus.owner" class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
+        <h2>OwnerPool Holdings</h2>
+        <div *ngIf="lotteryStatus.ownerpool>0">
+          <p>Owner Pool fund: {{lotteryStatus.ownerpool}}</p>
+          <button class="btn btn-outline-light" type="button" (click)="withdrawTokens()">Show me the money</button>
+        </div>
+        <div *ngIf="lotteryStatus.ownerpool==0">
+          <p>Owner Pool fund: empty</p>
+        </div>
+      </div>
+
     </div>
     <div class="col-md-6">
-      <div class="h-100 p-5 bg-light border rounded-3 opacity-7">
+      <div class="h-100 p-5 bg-light border rounded-3 opacity-75">
         <h2>Burn Tokens</h2>
-        <p>Yadayadadaa</p>
-        <button class="btn btn-outline-secondary" type="button" (click)="burnbabyburn()">Burn Baby Burn</button>
+        <div *ngIf="lotteryStatus.tokens>0">
+          <p>Burn your BLT ({{lotteryStatus.tokens}}) in return for ETH</p>
+          <button class="btn btn-danger" type="button" (click)="burnTokens()">Burn Baby Burn</button>
+        </div>
+        <div *ngIf="lotteryStatus.tokens==0">
+          <p>Lottery Token fund: empty</p>
+        </div>
       </div>
     </div>
   </div>
