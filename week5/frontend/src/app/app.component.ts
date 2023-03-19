@@ -284,8 +284,21 @@ export class AppComponent{
   /**
    * Owner pool/fees withdrawl
    */
-  withdrawTokens(){
+  async withdrawTokens(){
     alert('Show me the Money!!!');
+    if (!this.lotteryStatus.owner) {
+      alert('Only the owner can withdraw tokens')
+    } else {
+      const signer = this.metaMask.getSigner()
+      if (this.lotteryContract) {
+        const amountToWithdraw = this.lotteryStatus.ownerpool
+        const tx = await this.lotteryContract.connect(signer)['ownerWithdraw'](amountToWithdraw)
+        const receipt = await tx.wait()
+        if (receipt.status === 1) alert(`Successfully withdrawn ${amountToWithdraw}`)
+        else alert(`Failed to withdraw ${amountToWithdraw}`)
+      }
+    }
+    await this.checkStatus()
   }
 
   /**
