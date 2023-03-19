@@ -179,37 +179,36 @@
 
 
   <div class="row align-items-md-stretch" *ngIf="metaMask.isConnectedToGoerli()">
-    <div class="col-md-6">
-
-      <div *ngIf="!lotteryStatus.owner" class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
+    <div class="col-md-4">
+      <div class="h-100 p-5 text-bg-warning border rounded-3 opacity-75">
         <h2>Withdraw winnings</h2>
         <div *ngIf="lotteryStatus.prizes>0">
           <p>Claimable Prize fund: {{lotteryStatus.prizes}}</p>
-          <button class="btn btn-outline-light" type="button" (click)="claimPrize()">Show me the money</button>
+          <button class="btn btn-outline-light" type="button" (click)="claimPrize()">Withdraw OwnerPool Funds</button>
         </div>
         <div *ngIf="lotteryStatus.prizes==0">
           <p>Claimable Prize fund: empty</p>
         </div>
       </div>
-
-      <div *ngIf="lotteryStatus.owner" class="h-100 p-5 text-bg-dark rounded-3 opacity-75">
+    </div>
+    <div class="col-md-4">
+      <div class="h-100 p-5 text-bg-success border rounded-3 opacity-75">
         <h2>OwnerPool Holdings</h2>
         <div *ngIf="lotteryStatus.ownerpool>0">
           <p>Owner Pool fund: {{lotteryStatus.ownerpool}}</p>
-          <button *ngIf="lotteryStatus.loading != 1" class="btn btn-outline-light" type="button" (click)="withdrawTokens()">Show me the money</button>
+          <button *ngIf="lotteryStatus.loading != 1 && lotteryStatus.owner" class="btn btn-outline-light" type="button" (click)="withdrawTokens()">Withdraw Prize Funds</button>
         </div>
         <div *ngIf="lotteryStatus.ownerpool==0">
           <p>Owner Pool fund: empty</p>
         </div>
       </div>
-
     </div>
-    <div class="col-md-6">
-      <div class="h-100 p-5 bg-light border rounded-3 opacity-75">
-        <h2>Burn Tokens</h2>
+    <div class="col-md-4">
+      <div class="h-100 p-5 bg-danger border rounded-3 opacity-75">
+        <h2>Burn Tokens for ETH</h2>
         <div *ngIf="lotteryStatus.tokens>0">
-          <p>Burn your BLT ({{lotteryStatus.tokens}}) in return for ETH</p>
-          <button *ngIf="lotteryStatus.loading != 1" class="btn btn-danger" type="button" (click)="burnTokens()">Burn Baby Burn</button>
+          <p>Burn your BLT ({{lotteryStatus.tokens}})</p>
+          <button *ngIf="lotteryStatus.loading != 1" class="btn btn-outline-light" type="button" (click)="burnTokens()">Burn and Swap</button>
         </div>
         <div *ngIf="lotteryStatus.tokens==0">
           <p>Lottery Token fund: empty</p>
