@@ -51,14 +51,14 @@ export class metaMaskModule {
     this.provider = await detectEthereumProvider();
     if(this.provider) {
       // Set Account switch callback
-      this.provider.on('accountsChanged', (accounts: any) => {
+      this.provider.on('accountsChanged', async (accounts: any) => {
         console.log(`Metamask account switched: ${accounts}`);
-        this.initLocalWallet(accounts);
+        await this.initLocalWallet(accounts);
       });
       // Set Network/Chain switch callback
-      this.provider.on('chainChanged', (chainId: any) => {
+      this.provider.on('chainChanged', async (chainId: any) => {
         console.log(`Metamask chain switched: ${chainId}`);
-        this.initLocalWallet([this.userWalletAddress]);
+        await this.initLocalWallet([this.userWalletAddress]);
       });
       // Listen for disconnect but it appears accountsChanged<empty> fires instead so maybe deprecated
       this.provider.on('disconnect', (error: any) => {
@@ -81,8 +81,8 @@ export class metaMaskModule {
    */
   connectWallet() {
     if(this.provider) {
-      this.provider.request({method: "eth_requestAccounts"}).then((accounts: any) => {
-        this.initLocalWallet(accounts);
+      this.provider.request({method: "eth_requestAccounts"}).then(async (accounts: any) => {
+        await this.initLocalWallet(accounts);
       });
     }
   }
@@ -91,7 +91,7 @@ export class metaMaskModule {
    * Initialise userWallet variables - Address, Balance and Network
    * @param accounts - empty on disconnect
    */
-  initLocalWallet(accounts: any) {
+  async initLocalWallet(accounts: any) {
     if(this.provider && accounts.length) {
       this.userWalletAddress = accounts[0];
       this.provider.request({

@@ -76,6 +76,9 @@ export class AppComponent{
    * Get Lottery Status and closing date/time
    */
   async checkStatus(){
+    if(!this.metaMask.isConnectedToGoerli()){
+      return;
+    }
     if(this.lotteryContract) {
       this.lotteryStatus.state = 3;
       this.lotteryStatus.loading = 1;
