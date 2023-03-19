@@ -3,7 +3,12 @@ import {Lottery__factory} from "../typechain-types";
 import * as helpers from "./helpers";
 import * as dotenv from 'dotenv';
 import {Wallet} from "ethers";
+import {ethers} from "hardhat";
 dotenv.config();
+
+const BET_PRICE = 1;
+const BET_FEE = 0.2;
+const TOKEN_RATIO = 1;
 
 /**
  * yarn run ts-node --files ./scripts/deploy.ts
@@ -26,26 +31,28 @@ async function main() {
 
 
 async function deployContracts( signer: Wallet ){
-    // Deploy Contract 1
-    console.log("Deploying Token contract");
-    const tokenContractFactory = new LotteryToken__factory(signer);
-    const tokenContract = await tokenContractFactory.deploy('BLOTTO', 'BLT');
-
-    // Get deployment transaction info
-    const deployTokenTxReceipt = await tokenContract.deployTransaction.wait();
-    console.log(`Token Contract deployed at: ${tokenContract.address}`);
-    console.log(deployTokenTxReceipt);
-
-
     // Deploy Contract 2
     console.log("Deploying Token contract");
     const lotteryContractFactory = new Lottery__factory(signer);
-    const lotteryContract = await lotteryContractFactory.deploy('BLOTTO', 'BLT', 100, 10, 2);
+    const lotteryContract = await lotteryContractFactory.deploy(
+        'BLOTTO',
+        'BLT',
+        TOKEN_RATIO,
+        ethers.utils.parseEther(BET_PRICE.toFixed(18)),
+        ethers.utils.parseEther(BET_FEE.toFixed(18))
+    );
 
     // Get deployment transaction info
     const deployLotteryTxReceipt = await lotteryContract.deployTransaction.wait();
     console.log(`Lottery Contract deployed at: ${lotteryContract.address}`);
     console.log(deployLotteryTxReceipt);
+
+
+    // Attach Token Contract
+    console.log("Attaching Token contract");
+    const tokenAddress = await lotteryContract.paymentToken();
+    const tokenContractFactory = new LotteryToken__factory(signer);
+    const token = tokenContractFactory.attach(tokenAddress);
 }
 
 main().catch((error) => {
