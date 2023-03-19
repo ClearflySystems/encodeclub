@@ -30,13 +30,17 @@
           <p class="fs-6"><strong>Lottery status: </strong> <span>{{getLotterStateLabel()}}</span></p>
           <p class="fs-6"><strong>Lottery start: </strong> <span>{{lotteryStatus.currentBlockDate}}</span></p>
           <p class="fs-6"><strong>Lottery closes: </strong> <span>{{lotteryStatus.closingTimeDate}}</span></p>
-          <p class="fs-6"><strong>Connected as {{lotteryStatus.owner? 'owner' : 'player'}}: </strong> <span>{{metaMask.userWalletAddress}}</span></p>
           <p class="fs-6"><strong>Available tokens: </strong> {{lotteryStatus.tokens}} BLT</p>
+          <p class="fs-6"><strong>Connected as {{lotteryStatus.owner? 'owner' : 'player'}}: </strong> <span><a href="https://goerli.etherscan.io/address/{{metaMask.userWalletAddress}}" target="_blank">{{metaMask.userWalletAddress}}</a></span></p>
         </div>
         <div *ngIf="!metaMask.userWalletAddress || !metaMask.isConnectedToGoerli()">
           <p>To Play B`Lotto you need to connect your MetaMask Wallet to the Goerli Network</p>
           <p *ngIf="!metaMask.userWalletAddress"><button class="btn btn-lg btn-warning" type="button" (click)="metaMask.connectWallet()">Connect MetaMask</button></p>
           <p *ngIf="metaMask.userWalletAddress">Open MetaMask and Switch Network from {{metaMask.getUserWalletNetworkName()}} to Goerli</p>
+        </div>
+        <div>
+          <p class="fs-6"><strong>Lottery Contract: </strong> <span><a href="https://goerli.etherscan.io/address/{{lotteryContractAddress}}" target="_blank">{{lotteryContractAddress}}</a></span></p>
+          <p class="fs-6"><strong>Token Contract: </strong> <span><a href="https://goerli.etherscan.io/address/{{tokenContractAddress}}" target="_blank">{{tokenContractAddress}}</a></span></p>
         </div>
       </div>
       <div class="col-sm-6">
@@ -136,6 +140,28 @@
               <span *ngIf="lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap"><button class="btn btn-sm btn-dark" (click)="closeLottery()">Go</button></span>
               <span *ngIf="!lotteryStatus.owner" class="opacity-75 text-nowrap">Admin only</span>
               <span *ngIf="lotteryStatus.owner && lotteryStatus.state != 1">Not yet open</span>
+            </div>
+          </div>
+
+          <div class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+            <i class="bi bi-send-check fs-5"></i>
+            <div class="d-flex gap-2 w-100 justify-content-between">
+              <div>
+                <h6 class="mb-0">Transfer Ownership</h6>
+                <p class="mb-0 opacity-75"></p>
+              </div>
+              <span *ngIf="lotteryStatus.owner && lotteryStatus.state == 1" class="opacity-75 text-nowrap">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    name="transferAddress"
+                    type="text"
+                    #transferAddress
+                  />
+                  <button class="btn btn-sm btn-dark" (click)="transferOwnership( transferAddress.value )">Go</button>
+                </div>
+              </span>
+              <span *ngIf="!lotteryStatus.owner" class="opacity-75 text-nowrap">Admin only</span>
             </div>
           </div>
 

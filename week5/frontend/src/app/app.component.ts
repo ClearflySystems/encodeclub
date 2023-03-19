@@ -130,8 +130,8 @@ export class AppComponent{
         const tx = await connectContract['openBets']( closing / 1000, {
           gasLimit:100000
         });
-        const rcpt = await tx.wait();
-        console.log(rcpt);
+        const receipt = await tx.wait();
+        console.log(receipt);
         await this.checkStatus();
       }catch (e){
         this.displayError(e);
@@ -155,8 +155,8 @@ export class AppComponent{
       const tx = await connectContract['purchaseTokens']({
         value: utils.parseEther(tokensRequired.toFixed(18)) // convert to WEI - ethers.utils.parseEther(amount).div(TOKEN_RATIO)
       });
-      const rcpt = await tx.wait();
-      console.log(rcpt);
+      const receipt = await tx.wait();
+      console.log(receipt);
       await this.checkStatus();
     }catch (e){
       this.displayError(e);
@@ -182,8 +182,8 @@ export class AppComponent{
       const tx = await connectContract['closeLottery']({
         gasLimit:100000
       });
-      const rcpt = await tx.wait();
-      console.log(rcpt);
+      const receipt = await tx.wait();
+      console.log(receipt);
       await this.checkStatus();
     }catch (e){
       this.displayError(e);
@@ -215,34 +215,34 @@ export class AppComponent{
       const state = await this.lotteryContract['betsOpen']();
       if (!state) {
         alert('lottery closed')
-        return 
+        return
       }
       const signer = this.metaMask.getSigner()
       const allowanceBefore = await this.tokenContract['allowance'](await signer.getAddress(), this.tokenContractAddress)
       const betPrice = await this.lotteryContract['betPrice']()
       const betFee = await this.lotteryContract['betFee']()
       const requiredBalance = betPrice.add(betFee)
-      let allowanceTxReceiptSuccess: boolean = false 
+      let allowanceTxReceiptSuccess: boolean = false
       if (allowanceBefore.eq(0)) {
         const allowTx = await this.tokenContract.connect(signer)['approve'](this.lotteryContractAddress, requiredBalance)
         const receipt = await allowTx.wait()
-        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false 
+        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false
       } else if (allowanceBefore.lt(requiredBalance)) {
         const amountToIncrease = requiredBalance.sub(allowanceBefore)
         const allowTx = await this.tokenContract.connect(signer)['increaseAllowance'](this.lotteryContractAddress, amountToIncrease)
         const receipt = await allowTx.wait()
-        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false 
+        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false
       } else { allowanceTxReceiptSuccess = true }
 
       if (!allowanceTxReceiptSuccess) {
         alert('There was an error while approving the lottery tokens')
-        return 
+        return
       }
 
       const connectContract = this.lotteryContract.connect(signer);
       const tx = await connectContract['bet']();
-      const rcpt = tx.wait();
-      console.log(rcpt);
+      const receipt = tx.wait();
+      console.log(receipt);
       await this.checkStatus();
     }
   }
@@ -256,16 +256,16 @@ export class AppComponent{
       alert('No claimable prizes - check for prizes first');
       return;
     }
-    alert('Show me the Money!!!');
-    if (this.lotteryContract) {
-      const signer = this.metaMask.getSigner()
-      const amount = this.lotteryStatus.prizes
-      const tx = await this.lotteryContract.connect(signer)['prizeWithdraw'](amount)
-      const receipt = await tx.wait()
-      if (receipt.status === 1) alert(`Withdrawn prize of ${amount}`)
-      else alert(`Failed to withdraw the prize of ${amount}`)
+    const amount = this.lotteryStatus.prizes;
+    const connectContract = this.getLotteryContractOwnerSigned();
+    const tx = await connectContract['prizeWithdraw'](amount);
+    const receipt = await tx.wait();
+    if (receipt.status === 1) {
+      alert(`Withdrawn prize of ${amount}`);
+      await this.checkStatus();
+    } else {
+      alert(`Failed to withdraw the prize of ${amount}`);
     }
-    await this.checkStatus()
   }
 
   /**
@@ -274,7 +274,6 @@ export class AppComponent{
    */
   async burnTokens(){
     if (this.lotteryContract && this.tokenContract) {
-      alert('Burn baby burn!!!');
       const amount = utils.parseEther(this.lotteryStatus.tokens)
       const signer = this.metaMask.getSigner()
       // approve contract to burn
@@ -294,20 +293,36 @@ export class AppComponent{
    * Owner pool/fees withdrawl
    */
   async withdrawTokens(){
-    alert('Show me the Money!!!');
     if (!this.lotteryStatus.owner) {
       alert('Only the owner can withdraw tokens')
     } else {
-      const signer = this.metaMask.getSigner()
-      if (this.lotteryContract) {
-        const amountToWithdraw = this.lotteryStatus.ownerpool
-        const tx = await this.lotteryContract.connect(signer)['ownerWithdraw'](amountToWithdraw)
-        const receipt = await tx.wait()
-        if (receipt.status === 1) alert(`Successfully withdrawn ${amountToWithdraw}`)
-        else alert(`Failed to withdraw ${amountToWithdraw}`)
-      }
+      const amountToWithdraw = this.lotteryStatus.ownerpool
+      const connectContract = this.getLotteryContractOwnerSigned();
+      const tx = await connectContract['ownerWithdraw'](amountToWithdraw);
+      const receipt = await tx.wait()
+      if (receipt.status === 1) alert(`Successfully withdrawn ${amountToWithdraw}`)
+      else alert(`Failed to withdraw ${amountToWithdraw}`);
+      await this.checkStatus();
     }
-    await this.checkStatus()
+  }
+
+  /**
+   * Transfer Lottery Contract Ownership to new address
+   * @param address
+   */
+  async transferOwnership(address:string) {
+    if(address && utils.isAddress(address)){
+      this.lotteryStatus.loading = 1;
+      const connectContract = this.getLotteryContractOwnerSigned();
+      const tx = await connectContract['transferOwnership'](address, {
+        gasLimit:100000
+      });
+      const rcpt = await tx.wait();
+      console.log(rcpt);
+      await this.checkStatus();
+    }else{
+      this.displayError('Invalid Transfer Address');
+    }
   }
 
   /**
