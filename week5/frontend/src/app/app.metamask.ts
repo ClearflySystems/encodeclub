@@ -66,11 +66,11 @@ export class metaMaskModule {
         this.disconnectWallet();
       });
       // On Message notification
-      this.provider.on('message', (message: any) => {
-        console.log(message);
-        alert(message);
-        this.onUpdateCallback();
-      });
+      //this.provider.on('message', (message: any) => {
+      //  console.log(message);
+      //  alert(message);
+      //  this.onUpdateCallback();
+      //});
       // Connect Wallet
       this.connectWallet();
     }
