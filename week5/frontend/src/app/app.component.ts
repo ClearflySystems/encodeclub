@@ -6,7 +6,7 @@ import tokenJson from '../assets/LotteryToken.json';
 import lotteryJson from '../assets/LotteryContract.json';
 
 import {environment} from "../../environments/environment";
-const LOTTERY_TOKEN_ADDRESS = '0xc658f73a856F2D9e3ACb7fD6a1F51483DD411647';
+const LOTTERY_TOKEN_ADDRESS = '0xcBe3930C2bA5A8247870E735972120e634F40Cd3';
 const LOTTERY_CONTRACT_ADDRESS = '0xDd7925285d273AF86C460fB704A5345c0fB44631';
 const TOKEN_RATIO = 1000000;
 
@@ -212,19 +212,38 @@ export class AppComponent{
    */
   async placeBets(amount:string = "10"){
     if(this.lotteryContract && this.tokenContract) {
-      const allowTx = await this.tokenContract.connect(this.metaMask.getSigner())['approve'](this.lotteryContract.address, ethers.constants.MaxUint256);
-      await allowTx.wait();
       const state = await this.lotteryContract['betsOpen']();
-      if(state){
-        const connectContract = this.lotteryContract.connect(this.metaMask.getSigner());
-        const tx = await connectContract['bet']();
-        const rcpt = tx.wait();
-        console.log(rcpt);
-        await this.checkStatus();
-      }else{
+      if (!state) {
         alert('lottery closed')
+        return 
+      }
+      const signer = this.metaMask.getSigner()
+      const allowanceBefore = await this.tokenContract['allowance'](await signer.getAddress(), this.tokenContractAddress)
+      const betPrice = await this.lotteryContract['betPrice']()
+      const betFee = await this.lotteryContract['betFee']()
+      const requiredBalance = betPrice.add(betFee)
+      let allowanceTxReceiptSuccess: boolean = false 
+      if (allowanceBefore.eq(0)) {
+        const allowTx = await this.tokenContract.connect(signer)['approve'](this.lotteryContractAddress, requiredBalance)
+        const receipt = await allowTx.wait()
+        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false 
+      } else if (allowanceBefore.lt(requiredBalance)) {
+        const amountToIncrease = requiredBalance.sub(allowanceBefore)
+        const allowTx = await this.tokenContract.connect(signer)['increaseAllowance'](this.lotteryContractAddress, amountToIncrease)
+        const receipt = await allowTx.wait()
+        allowanceTxReceiptSuccess = receipt.status === 1 ? true : false 
+      } else { allowanceTxReceiptSuccess = true }
+
+      if (!allowanceTxReceiptSuccess) {
+        alert('There was an error while approving the lottery tokens')
+        return 
       }
 
+      const connectContract = this.lotteryContract.connect(signer);
+      const tx = await connectContract['bet']();
+      const rcpt = tx.wait();
+      console.log(rcpt);
+      await this.checkStatus();
     }
   }
 
@@ -232,27 +251,63 @@ export class AppComponent{
    * Claim Prize Money amount
    * TODO
    */
-  claimPrize(){
+  async claimPrize(){
     if(this.lotteryStatus.prizes == 0){
       alert('No claimable prizes - check for prizes first');
       return;
     }
     alert('Show me the Money!!!');
+    if (this.lotteryContract) {
+      const signer = this.metaMask.getSigner()
+      const amount = this.lotteryStatus.prizes
+      const tx = await this.lotteryContract.connect(signer)['prizeWithdraw'](amount)
+      const receipt = await tx.wait()
+      if (receipt.status === 1) alert(`Withdrawn prize of ${amount}`)
+      else alert(`Failed to withdraw the prize of ${amount}`)
+    }
+    await this.checkStatus()
   }
 
   /**
    * Burn Token
    * TODO
    */
-  burnTokens(){
-    alert('Burn baby burn!!!');
+  async burnTokens(){
+    if (this.lotteryContract && this.tokenContract) {
+      alert('Burn baby burn!!!');
+      const amount = utils.parseEther(this.lotteryStatus.tokens)
+      const signer = this.metaMask.getSigner()
+      // approve contract to burn
+      const approveTx = await this.tokenContract.connect(signer)['approve'](this.lotteryContract.address, amount)
+      let receipt = await approveTx.wait()
+      if (receipt.status === 1) {
+        const tx = await this.lotteryContract.connect(signer)['returnTokens'](amount)
+        receipt = await tx.wait()
+        if (receipt.status === 1) alert(`Burned ${amount} tokens for Ether`)
+        else alert(`Failed to burn ${amount} tokens`)
+      } else alert(`Failed to approve ${amount} tokens`)
+      await this.checkStatus();
+    }
   }
 
   /**
    * Owner pool/fees withdrawl
    */
-  withdrawTokens(){
+  async withdrawTokens(){
     alert('Show me the Money!!!');
+    if (!this.lotteryStatus.owner) {
+      alert('Only the owner can withdraw tokens')
+    } else {
+      const signer = this.metaMask.getSigner()
+      if (this.lotteryContract) {
+        const amountToWithdraw = this.lotteryStatus.ownerpool
+        const tx = await this.lotteryContract.connect(signer)['ownerWithdraw'](amountToWithdraw)
+        const receipt = await tx.wait()
+        if (receipt.status === 1) alert(`Successfully withdrawn ${amountToWithdraw}`)
+        else alert(`Failed to withdraw ${amountToWithdraw}`)
+      }
+    }
+    await this.checkStatus()
   }
 
   /**
