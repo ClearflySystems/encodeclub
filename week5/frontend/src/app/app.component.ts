@@ -251,12 +251,21 @@ export class AppComponent{
    * Claim Prize Money amount
    * TODO
    */
-  claimPrize(){
+  async claimPrize(){
     if(this.lotteryStatus.prizes == 0){
       alert('No claimable prizes - check for prizes first');
       return;
     }
     alert('Show me the Money!!!');
+    if (this.lotteryContract) {
+      const signer = this.metaMask.getSigner()
+      const amount = this.lotteryStatus.prizes
+      const tx = await this.lotteryContract.connect(signer)['prizeWithdraw'](amount)
+      const receipt = await tx.wait()
+      if (receipt.status === 1) alert(`Withdrawn prize of ${amount}`)
+      else alert(`Failed to withdraw the prize of ${amount}`)
+    }
+    await this.checkStatus()
   }
 
   /**
