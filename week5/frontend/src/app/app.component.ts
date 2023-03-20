@@ -191,7 +191,7 @@ export class AppComponent{
       this.lotteryStatus.loading = 1;
       const connectedLotteryContract = this.getLotteryContractOwnerSigned();
       const tx = await connectedLotteryContract['closeLottery']({
-        gasLimit:100000
+        gasLimit:1000000
       });
       const receipt = await tx.wait();
       console.log(receipt);
@@ -283,15 +283,15 @@ export class AppComponent{
       return;
     }
     this.lotteryStatus.loading = 1;
-    const amount = this.lotteryStatus.prizes;
+    const amountToWithdraw = utils.parseEther(this.lotteryStatus.prizes);
     const connectedLotteryContract = this.getLotteryContractOwnerSigned();
-    const tx = await connectedLotteryContract['prizeWithdraw'](amount);
+    const tx = await connectedLotteryContract['prizeWithdraw'](amountToWithdraw);
     const receipt = await tx.wait();
     if (receipt.status === 1) {
-      alert(`Withdrawn prize of ${amount}`);
+      alert(`Withdrawn prize of ${amountToWithdraw}`);
       await this.metaMask.refreshWallet();
     } else {
-      this.displayError(`Failed to withdraw the prize of ${amount}`);
+      this.displayError(`Failed to withdraw the prize of ${amountToWithdraw}`);
     }
   }
 
@@ -329,7 +329,7 @@ export class AppComponent{
     if (!this.lotteryStatus.owner) {
       alert('Only the owner can withdraw tokens');
     } else {
-      const amountToWithdraw = this.lotteryStatus.ownerpool;
+      const amountToWithdraw = utils.parseEther(this.lotteryStatus.ownerpool);
       const connectedLotteryContract = this.getLotteryContractOwnerSigned();
       const tx = await connectedLotteryContract['ownerWithdraw'](amountToWithdraw);
       const receipt = await tx.wait();
