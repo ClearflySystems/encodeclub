@@ -226,52 +226,56 @@ export class AppComponent{
       alert('You need to buy Lottery Tokens first.');
       return;
     }
-    // Connect Signer to contracts
-    const connectedLotteryContract = this.getLotteryContractOwnerSigned();
-    const connectedTokenContract = this.getTokenContractOwnerSigned();
-    // Check Lottery still open
-    const state = await connectedLotteryContract['betsOpen']();
-    if (!state) {
-      alert('lottery closed');
-      return;
+    try {
+      // Set as busy
+      this.lotteryStatus.loading = 1;
+      // Connect Signer to contracts
+      const connectedLotteryContract = this.getLotteryContractOwnerSigned();
+      const connectedTokenContract = this.getTokenContractOwnerSigned();
+      // Check Lottery still open
+      const state = await connectedLotteryContract['betsOpen']();
+      if (!state) {
+        alert('lottery closed');
+        return;
+      }
+      // Limit entries
+      let entries = parseInt(amount) | 1;
+      entries = Math.min(entries, 10);// Limit to 10
+      let allowanceTxReceiptSuccess: boolean = false;
+      // Calculate required balance to approve
+      const allowanceBefore = await connectedTokenContract['allowance'](
+        await this.metaMask.getSigner().getAddress(),
+        this.tokenContractAddress
+      );
+      const betPrice = await connectedLotteryContract['betPrice']();
+      const betFee = await connectedLotteryContract['betFee']();
+      const requiredBalance = betPrice.add(betFee).mul(entries);
+      // Approve or increase allowances - via Metamask
+      if (allowanceBefore.eq(0)) {
+        const allowTx = await connectedTokenContract['approve'](this.lotteryContractAddress, requiredBalance);
+        const receipt = await allowTx.wait();
+        allowanceTxReceiptSuccess = receipt.status === 1;
+      } else if (allowanceBefore.lt(requiredBalance)) {
+        const amountToIncrease = requiredBalance.sub(allowanceBefore);
+        const allowTx = await connectedTokenContract['increaseAllowance'](this.lotteryContractAddress, amountToIncrease);
+        const receipt = await allowTx.wait();
+        allowanceTxReceiptSuccess = receipt.status === 1;
+      } else {
+        allowanceTxReceiptSuccess = true;
+      }
+      // Approval failes
+      if (!allowanceTxReceiptSuccess) {
+        this.displayError('There was an error while approving the lottery tokens');
+        return;
+      }
+      // Place multiple bets
+      const tx = await connectedLotteryContract['betMany'](entries);
+      const receipt = await tx.wait();
+      console.log(receipt);
+      await this.metaMask.refreshWallet();
+    } catch(e) {
+      this.displayError(e);
     }
-    // Limit entries
-    let entries = parseInt(amount) | 1;
-    entries = Math.min(entries, 10);// Limit to 10
-    // Set as busy
-    this.lotteryStatus.loading = 1;
-    let allowanceTxReceiptSuccess: boolean = false;
-    // Calculate required balance to approve
-    const allowanceBefore = await connectedTokenContract['allowance'](
-      await this.metaMask.getSigner().getAddress(),
-      this.tokenContractAddress
-    );
-    const betPrice = await connectedLotteryContract['betPrice']();
-    const betFee = await connectedLotteryContract['betFee']();
-    const requiredBalance = betPrice.add(betFee).mul(entries);
-    // Approve or increase allowances - via Metamask
-    if (allowanceBefore.eq(0)) {
-      const allowTx = await connectedTokenContract['approve'](this.lotteryContractAddress, requiredBalance);
-      const receipt = await allowTx.wait();
-      allowanceTxReceiptSuccess = receipt.status === 1;
-    } else if (allowanceBefore.lt(requiredBalance)) {
-      const amountToIncrease = requiredBalance.sub(allowanceBefore);
-      const allowTx = await connectedTokenContract['increaseAllowance'](this.lotteryContractAddress, amountToIncrease);
-      const receipt = await allowTx.wait();
-      allowanceTxReceiptSuccess = receipt.status === 1;
-    } else {
-      allowanceTxReceiptSuccess = true;
-    }
-    // Approval failes
-    if (!allowanceTxReceiptSuccess) {
-      this.displayError('There was an error while approving the lottery tokens');
-      return;
-    }
-    // Place multiple bets
-    const tx = await connectedLotteryContract['betMany'](entries);
-    const receipt = await tx.wait();
-    console.log(receipt);
-    await this.metaMask.refreshWallet();
   }
 
   /**
@@ -282,16 +286,20 @@ export class AppComponent{
       alert('No claimable prizes - check for prizes first');
       return;
     }
-    this.lotteryStatus.loading = 1;
-    const amountToWithdraw = utils.parseEther(this.lotteryStatus.prizes);
-    const connectedLotteryContract = this.getLotteryContractOwnerSigned();
-    const tx = await connectedLotteryContract['prizeWithdraw'](amountToWithdraw);
-    const receipt = await tx.wait();
-    if (receipt.status === 1) {
-      alert(`Withdrawn prize of ${amountToWithdraw}`);
-      await this.metaMask.refreshWallet();
-    } else {
-      this.displayError(`Failed to withdraw the prize of ${amountToWithdraw}`);
+    try {
+      this.lotteryStatus.loading = 1;
+      const amountToWithdraw = utils.parseEther(this.lotteryStatus.prizes);
+      const connectedLotteryContract = this.getLotteryContractOwnerSigned();
+      const tx = await connectedLotteryContract['prizeWithdraw'](amountToWithdraw);
+      const receipt = await tx.wait();
+      if (receipt.status === 1) {
+        alert(`Withdrawn prize of ${amountToWithdraw}`);
+        await this.metaMask.refreshWallet();
+      } else {
+        this.displayError(`Failed to withdraw the prize of ${amountToWithdraw}`);
+      }
+    }catch(e){
+      this.displayError(e);
     }
   }
 
@@ -299,27 +307,30 @@ export class AppComponent{
    * Burn Token
    */
   async burnTokens(){
-    // Connect Signer to contracts
-    const connectedLotteryContract = this.getLotteryContractOwnerSigned();
-    const connectedTokenContract = this.getTokenContractOwnerSigned();
-    this.lotteryStatus.loading = 1;
-    const amount = utils.parseEther(this.lotteryStatus.tokens);
-    // approve contract to burn
-    const approveTx = await connectedTokenContract['approve'](connectedLotteryContract.address, amount);
-    let receipt = await approveTx.wait();
-    if (receipt.status === 1) {
-      const tx = await connectedLotteryContract['returnTokens'](amount);
-      receipt = await tx.wait();
+    try {
+      // Connect Signer to contracts
+      const connectedLotteryContract = this.getLotteryContractOwnerSigned();
+      const connectedTokenContract = this.getTokenContractOwnerSigned();
+      this.lotteryStatus.loading = 1;
+      const amount = utils.parseEther(this.lotteryStatus.tokens);
+      // approve contract to burn
+      const approveTx = await connectedTokenContract['approve'](connectedLotteryContract.address, amount);
+      let receipt = await approveTx.wait();
       if (receipt.status === 1) {
-        alert(`Burned ${amount} tokens for Ether`);
+        const tx = await connectedLotteryContract['returnTokens'](amount);
+        receipt = await tx.wait();
+        if (receipt.status === 1) {
+          alert(`Burned ${amount} tokens for Ether`);
+        } else {
+          alert(`Failed to burn ${amount} tokens`);
+        }
+      } else {
+        alert(`Failed to approve ${amount} tokens`);
       }
-      else {
-        alert(`Failed to burn ${amount} tokens`);
-      }
-    } else {
-      alert(`Failed to approve ${amount} tokens`);
+      await this.metaMask.refreshWallet();
+    }catch(e){
+      this.displayError(e);
     }
-    await this.metaMask.refreshWallet();
   }
 
   /**
@@ -348,14 +359,18 @@ export class AppComponent{
    */
   async transferOwnership(address:string) {
     if(address && utils.isAddress(address)){
-      this.lotteryStatus.loading = 1;
-      const connectedLotteryContract = this.getLotteryContractOwnerSigned();
-      const tx = await connectedLotteryContract['transferOwnership'](address, {
-        gasLimit:100000
-      });
-      const rcpt = await tx.wait();
-      console.log(rcpt);
-      await this.checkStatus();
+      try {
+        this.lotteryStatus.loading = 1;
+        const connectedLotteryContract = this.getLotteryContractOwnerSigned();
+        const tx = await connectedLotteryContract['transferOwnership'](address, {
+          gasLimit: 100000
+        });
+        const rcpt = await tx.wait();
+        console.log(rcpt);
+        await this.checkStatus();
+      }catch(e){
+        this.displayError(e);
+      }
     }else{
       this.displayError('Invalid Transfer Address');
     }
