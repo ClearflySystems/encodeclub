@@ -68,6 +68,12 @@ export class metaMaskModule {
         console.log(`Metamask disconnected: ${error}`);
         this.disconnectWallet();
       });
+      this.web3provider.on('error', (error:any) => {
+        console.log(`Metamask error caught: ${error}`);
+      });
+      this.web3provider.on('message', (error:any) => {
+        console.log(`Metamask message caught: ${error}`);
+      });
       // On Message notification
       //this.provider.on('message', (message: any) => {
       //  console.log(message);
